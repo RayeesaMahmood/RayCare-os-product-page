@@ -1,0 +1,1456 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>RayCare OS</title>
+<meta name="description" content="RayCare OS is the patient flow operating system for hospitals: live queues with honest wait times, ESI emergency triage, beds, appointments, lobby screens and multilingual patient updates. Self-hosted, installs in minutes.">
+<meta property="og:title" content="RayCare OS · Patient flow for hospitals">
+<meta property="og:description" content="Every patient knows their turn. Every department knows its load.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='9' fill='%231D4ED8'/%3E%3Cpath d='M8 22a12 12 0 0 1 16-11' stroke='%23FF8A45' stroke-width='3' fill='none' stroke-linecap='round'/%3E%3Ccircle cx='9' cy='22' r='2.4' fill='%23fff'/%3E%3Ccircle cx='16' cy='22' r='2.4' fill='%23fff'/%3E%3Ccircle cx='23' cy='22' r='2.4' fill='%23fff'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Figtree:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&family=Noto+Sans+Devanagari:wght@600&family=Noto+Sans+Telugu:wght@600&display=swap">
+<style>
+/* Layout: sticky nav → split hero (copy + live product composite) → compatibility strip → problem/outcome → role journey tabs → bento features → install paths → architecture → ROI → pricing → trust → FAQ → CTA */
+:root{
+  --bg:#F4F6FA; --paper:#FFFFFF; --sunk:#EBEFF6; --ink:#0A1633; --ink-2:#2A3857; --muted:#5A6781; --line:#DCE2EE;
+  --brand:#1D4ED8; --brand-2:#3B6FF5; --brand-soft:#E3EAFF; --signal:#E8641A; --signal-soft:#FFECE0;
+  --night:#07112B; --night-2:#0E1C40; --night-line:#1B2A55; --night-text:#A9B7DE; --led:#FFB547;
+  --ok:#15803D; --warn:#B7791F; --crit:#D92D20;
+  --f-display:"Bricolage Grotesque","Segoe UI",system-ui,sans-serif;
+  --f-body:"Figtree","Segoe UI",system-ui,sans-serif;
+  --f-mono:"JetBrains Mono",ui-monospace,Menlo,Consolas,monospace;
+  --f-indic:"Noto Sans Devanagari","Noto Sans Telugu",system-ui,sans-serif;
+  --shadow-lg:0 2px 4px rgba(10,22,51,.04),0 30px 60px -24px rgba(10,22,51,.28);
+  --shadow:0 1px 2px rgba(10,22,51,.05),0 12px 28px -16px rgba(10,22,51,.22);
+  --maxw:1200px; color-scheme:light;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#050B19; --paper:#0C1529; --sunk:#0A1224; --ink:#E8EDF8; --ink-2:#C4CEE3; --muted:#95A2BD; --line:#1D2B48;
+  --brand:#7A9BFF; --brand-2:#9DB5FF; --brand-soft:#14224A; --signal:#FF8A45; --signal-soft:#341C0F;
+  --night:#030817; --night-2:#0A1532; --ok:#4ADE80; --warn:#F2C14E; --crit:#FF6B5E;
+  --shadow-lg:0 2px 4px rgba(0,0,0,.3),0 30px 60px -24px rgba(0,0,0,.8); --shadow:0 1px 2px rgba(0,0,0,.4),0 12px 28px -16px rgba(0,0,0,.7); color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#050B19; --paper:#0C1529; --sunk:#0A1224; --ink:#E8EDF8; --ink-2:#C4CEE3; --muted:#95A2BD; --line:#1D2B48;
+  --brand:#7A9BFF; --brand-2:#9DB5FF; --brand-soft:#14224A; --signal:#FF8A45; --signal-soft:#341C0F;
+  --night:#030817; --night-2:#0A1532; --ok:#4ADE80; --warn:#F2C14E; --crit:#FF6B5E;
+  --shadow-lg:0 2px 4px rgba(0,0,0,.3),0 30px 60px -24px rgba(0,0,0,.8); --shadow:0 1px 2px rgba(0,0,0,.4),0 12px 28px -16px rgba(0,0,0,.7); color-scheme:dark}
+
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.6 var(--f-body);-webkit-font-smoothing:antialiased}
+.wrap{max-width:var(--maxw);margin:0 auto;padding-inline:20px}
+h1,h2,h3,h4{font-family:var(--f-display);margin:0;letter-spacing:-.022em;line-height:1.06;text-wrap:balance}
+h2{font-size:clamp(2rem,3.8vw,3rem);font-weight:800}
+h3{font-size:1.15rem;font-weight:700;letter-spacing:-.01em;line-height:1.25}
+p{margin:0}
+a{color:var(--brand)}
+.mono{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+.eyebrow{display:inline-flex;align-items:center;gap:8px;font:700 .76rem/1 var(--f-body);letter-spacing:.14em;text-transform:uppercase;color:var(--signal)}
+.eyebrow::before{content:"";width:18px;height:2px;background:currentColor;border-radius:2px}
+.lede{font-size:1.1rem;color:var(--muted);max-width:60ch}
+section{padding-block:104px}
+.sec-head{display:grid;gap:16px;max-width:780px;margin-bottom:48px}
+:focus-visible{outline:3px solid var(--signal);outline-offset:3px;border-radius:6px}
+
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:9px;border:1px solid transparent;border-radius:12px;padding:13px 20px;font:700 .95rem/1 var(--f-body);cursor:pointer;text-decoration:none;white-space:nowrap;transition:transform .15s,box-shadow .15s,background .15s,border-color .15s}
+.btn:hover{transform:translateY(-1px)}
+.btn-primary{background:var(--brand);color:#fff;box-shadow:0 8px 20px -10px color-mix(in srgb,var(--brand) 70%,transparent)}
+:root[data-theme="dark"] .btn-primary{color:#06102A}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .btn-primary{color:#06102A}}
+.btn-ghost{background:var(--paper);color:var(--ink);border-color:var(--line)}
+.btn-ghost:hover{border-color:var(--ink-2)}
+.btn-sm{padding:9px 14px;font-size:.86rem;border-radius:10px}
+.btn svg{flex:none}
+
+/* nav */
+.nav{position:sticky;top:env(safe-area-inset-top,0px);z-index:40;background:color-mix(in srgb,var(--bg) 84%,transparent);backdrop-filter:saturate(1.4) blur(12px);border-bottom:1px solid color-mix(in srgb,var(--line) 70%,transparent)}
+.nav .wrap{display:flex;align-items:center;gap:28px;height:68px}
+.logo{display:flex;align-items:center;gap:10px;text-decoration:none;color:var(--ink);font:800 1.2rem/1 var(--f-display);letter-spacing:-.02em}
+.logo small{font:700 .62rem/1 var(--f-body);letter-spacing:.14em;color:var(--signal);border:1px solid var(--line);padding:3px 5px;border-radius:5px}
+.nav-links{display:flex;gap:26px;margin-left:12px}
+.nav-links a{color:var(--muted);text-decoration:none;font-weight:600;font-size:.93rem}
+.nav-links a:hover{color:var(--ink)}
+.nav-cta{margin-left:auto;display:flex;gap:10px;align-items:center}
+@media (max-width:980px){.nav-links{display:none}}
+@media (max-width:480px){.nav-cta .btn-ghost{display:none}}
+
+/* hero */
+.hero{padding-block:72px 88px;position:relative;overflow:hidden}
+.hero::before{content:"";position:absolute;inset:-20% -10% auto auto;width:760px;height:760px;background:radial-gradient(closest-side,color-mix(in srgb,var(--brand-2) 18%,transparent),transparent);pointer-events:none}
+.hero .wrap{display:grid;grid-template-columns:minmax(0,.92fr) minmax(0,1.2fr);gap:56px;align-items:center;position:relative}
+.hero h1{font-size:clamp(2.5rem,4.7vw,3.9rem);font-weight:800;letter-spacing:-.035em}
+.hero h1 .hl{color:var(--brand);position:relative;white-space:nowrap}
+.hero h1 .hl::after{content:"";position:absolute;left:0;right:0;bottom:.06em;height:.12em;background:var(--led);border-radius:4px;z-index:-1;opacity:.55}
+.hero-copy{display:grid;gap:26px;min-width:0}
+.hero-cta{display:flex;gap:12px;flex-wrap:wrap}
+.research{display:flex;gap:12px;align-items:center;padding:12px 14px;border:1px solid var(--line);border-radius:14px;background:var(--paper);max-width:520px;text-decoration:none;color:var(--ink)}
+.research .badge{flex:none;width:38px;height:38px;border-radius:10px;background:var(--signal-soft);color:var(--signal);display:grid;place-items:center}
+.research b{display:block;font-size:.9rem}
+.research span{font-size:.82rem;color:var(--muted)}
+@media (max-width:1020px){.hero .wrap{grid-template-columns:1fr}}
+
+/* hero composite */
+.stage{position:relative;min-height:520px;min-width:0}
+.win{position:absolute;inset:42px 64px 30px 0;background:var(--paper);border:1px solid var(--line);border-radius:18px;box-shadow:var(--shadow-lg);overflow:hidden;display:grid;grid-template-rows:auto 1fr}
+.win-bar{display:flex;align-items:center;gap:7px;padding:10px 14px;border-bottom:1px solid var(--line);background:var(--sunk)}
+.win-bar i{width:10px;height:10px;border-radius:50%;background:var(--line)}
+.win-bar .url{margin-left:10px;flex:1;max-width:320px;background:var(--paper);border:1px solid var(--line);border-radius:7px;padding:4px 10px;font:500 .74rem var(--f-mono);color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.win-body{display:grid;grid-template-columns:52px minmax(0,1fr);min-height:0}
+.mini-rail{background:var(--night);display:grid;align-content:start;gap:12px;padding:14px 0;justify-items:center}
+.mini-rail i{width:22px;height:22px;border-radius:7px;background:var(--night-2)}
+.mini-rail i.on{background:#1D4ED8;box-shadow:0 0 0 2px var(--led)}
+.win-main{padding:18px 20px;display:grid;gap:14px;align-content:start;min-width:0}
+.win-main h4{font-size:1.02rem}
+.tiles{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.tile{border:1px solid var(--line);border-radius:10px;padding:9px 10px;min-width:0}
+.tile span{display:block;font-size:.64rem;color:var(--muted);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tile b{font:800 1.3rem/1.2 var(--f-display);font-variant-numeric:tabular-nums}
+.loads{display:grid;gap:7px}
+.er-line{display:flex;gap:10px;align-items:center;flex-wrap:wrap;border-top:1px dashed var(--line);padding-top:12px;font-size:.76rem;color:var(--muted)}
+.er-line b{color:var(--ink)}
+.er-line .esi{color:#fff;font:800 .7rem var(--f-display);border-radius:6px;padding:3px 6px}
+.load{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,2fr) 52px;gap:10px;align-items:center;font-size:.76rem}
+.load .nm{display:flex;gap:7px;align-items:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:600}
+.dot{width:8px;height:8px;border-radius:3px;flex:none}
+.track{height:7px;border-radius:99px;background:var(--sunk);overflow:hidden}
+.track i{display:block;height:100%;border-radius:99px;transition:width .6s ease}
+.pill{font:700 .66rem/1 var(--f-mono);padding:4px 6px;border-radius:99px;text-align:center}
+.p-ok{color:var(--ok);background:color-mix(in srgb,var(--ok) 14%,transparent)}
+.p-warn{color:var(--warn);background:color-mix(in srgb,var(--warn) 16%,transparent)}
+.p-crit{color:var(--crit);background:color-mix(in srgb,var(--crit) 14%,transparent)}
+.ledstrip{position:absolute;top:0;left:-22px;z-index:3;background:var(--night);color:var(--night-text);border-radius:14px;padding:12px 16px;box-shadow:var(--shadow-lg);display:grid;gap:4px;min-width:250px}
+.ledstrip .lbl{font:600 .88rem/1.2 var(--f-indic);color:var(--led);min-height:1.2em;transition:opacity .3s}
+.ledstrip .row{display:flex;align-items:baseline;gap:10px;justify-content:space-between}
+.ledstrip .tok{font:700 1.7rem/1 var(--f-mono);color:var(--led);text-shadow:0 0 14px rgba(255,181,71,.5)}
+.ledstrip .rm{font:600 .8rem var(--f-mono);color:#C9D4F2}
+.phone{position:absolute;right:-8px;bottom:0;z-index:3;width:196px;background:#0A0F1E;border-radius:30px;padding:8px;box-shadow:var(--shadow-lg)}
+.phone .scr{background:var(--bg);border-radius:23px;padding:14px 14px 16px;display:grid;gap:10px;text-align:center}
+.phone .scr small{font-size:.66rem;color:var(--muted)}
+.ring{position:relative;width:118px;height:118px;margin:0 auto}
+.ring svg{width:100%;height:100%;transform:rotate(-90deg)}
+.ring .in{position:absolute;inset:0;display:grid;place-items:center}
+.ring .tk{font:700 1.25rem/1 var(--f-mono)}
+.phone .row3{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.phone .row3 b{display:block;font:800 1rem var(--f-display)}
+.phone .msg{font-size:.66rem;background:var(--brand-soft);color:var(--brand);border-radius:10px;padding:7px;font-weight:600;text-align:left}
+@media (max-width:640px){.stage{min-height:0;display:grid;gap:14px}.win,.ledstrip,.phone{position:relative;inset:auto;left:auto;right:auto}.phone{justify-self:center}.tiles{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+/* compat strip */
+.compat{border-block:1px solid var(--line);background:var(--paper)}
+.compat .wrap{display:flex;flex-wrap:wrap;align-items:center;gap:14px 34px;padding-block:22px}
+.compat .lead{font:700 .76rem var(--f-body);letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.compat span.item{display:flex;align-items:center;gap:8px;font-weight:600;color:var(--ink-2);font-size:.95rem}
+.compat svg{color:var(--brand)}
+
+/* problem */
+.pb{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px}
+.pb article{background:var(--paper);border:1px solid var(--line);border-radius:20px;padding:26px;display:grid;gap:14px;align-content:start}
+.pb .before{font-size:.94rem;color:var(--muted)}
+.pb .after{border-top:1px dashed var(--line);padding-top:14px;font-size:.95rem;display:grid;grid-template-columns:22px 1fr;gap:8px}
+.pb .after::before{content:"→";font:700 1rem var(--f-mono);color:var(--brand)}
+.pb .k{font:700 .72rem var(--f-mono);color:var(--signal);letter-spacing:.06em}
+@media (max-width:900px){.pb{grid-template-columns:1fr}}
+
+/* journey */
+.journey{background:var(--night);color:var(--night-text);border-radius:28px;padding:clamp(22px,4vw,48px);display:grid;gap:28px}
+.journey h2{color:#fff}
+.journey .lede{color:#9FB0DE}
+.jtabs{display:flex;gap:6px;flex-wrap:wrap}
+.jtab{border:1px solid var(--night-line);background:transparent;color:#C9D4F2;border-radius:99px;padding:9px 16px;font:700 .88rem var(--f-body);cursor:pointer}
+.jtab[aria-selected="true"]{background:#fff;color:#07112B;border-color:#fff}
+.jpanel{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.25fr);gap:36px;align-items:center}
+.jpanel ul{list-style:none;margin:0;padding:0;display:grid;gap:16px}
+.jpanel li{display:grid;grid-template-columns:28px 1fr;gap:12px;font-size:1rem;color:#DDE4F7}
+.jpanel li b{color:#fff;display:block}
+.jpanel li span{color:#9FB0DE;font-size:.92rem}
+.jpanel li::before{content:"";width:24px;height:24px;border-radius:8px;background:var(--night-2);box-shadow:inset 0 0 0 7px var(--night-2),inset 0 0 0 12px var(--led);margin-top:2px}
+.jshot{background:#F4F6FA;color:#0A1633;border-radius:18px;padding:18px;box-shadow:0 30px 60px -30px rgba(0,0,0,.8);min-width:0}
+@media (max-width:900px){.jpanel{grid-template-columns:1fr}}
+.m-form{display:grid;gap:8px}
+.m-f{border:1px solid #DCE2EE;border-radius:9px;background:#fff;padding:8px 10px;font-size:.82rem;color:#5A6781;display:flex;justify-content:space-between}
+.m-f b{color:#0A1633}
+.m-row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.m-split{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);gap:14px}
+@media (max-width:560px){.m-split{grid-template-columns:1fr}}
+.m-btn{background:#1D4ED8;color:#fff;border-radius:9px;padding:10px;text-align:center;font-weight:700;font-size:.85rem}
+.m-slip{background:#FFFDF7;border:1px dashed #C9CFDC;border-radius:8px;padding:12px;font:500 .76rem/1.5 var(--f-mono);text-align:center}
+.m-slip b{display:block;font-size:1.8rem;margin:6px 0}
+.m-consult{background:#07112B;color:#A9B7DE;border-radius:14px;padding:16px;display:grid;grid-template-columns:auto 1fr auto;gap:16px;align-items:center}
+.m-consult .t{font:700 1.8rem var(--f-mono);color:#FFB547}
+.m-consult .clk{font:800 1.4rem var(--f-mono);color:#fff}
+.m-outs{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}
+.m-outs span{border:1px solid #DCE2EE;background:#fff;border-radius:8px;padding:7px 10px;font-size:.78rem;font-weight:700}
+.m-outs span.o{background:#E8641A;border-color:#E8641A;color:#fff}
+.m-lane{display:grid;grid-template-columns:76px 1fr;gap:8px;align-items:center;margin-bottom:6px}
+.m-lane .h{border-radius:8px;padding:7px;color:#fff;font:800 .8rem var(--f-display)}
+.m-lane .c{display:flex;gap:6px;flex-wrap:wrap}
+.m-lane .c span{border:1px solid #DCE2EE;background:#fff;border-radius:8px;padding:5px 8px;font:700 .74rem var(--f-mono)}
+.m-bars{display:flex;align-items:flex-end;gap:10px;height:130px;padding-top:10px;border-bottom:1px solid #DCE2EE}
+.m-bars i{flex:1;border-radius:6px 6px 0 0;background:#1D4ED8}
+.m-bars i.f{background:#E8641A;opacity:.45}
+
+/* bento */
+.bento{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:16px}
+.bx{background:var(--paper);border:1px solid var(--line);border-radius:22px;padding:26px;display:grid;gap:12px;align-content:start;min-width:0;position:relative;overflow:hidden}
+.bx p{color:var(--muted);font-size:.95rem}
+.bx .tag{font:700 .72rem var(--f-mono);color:var(--signal);letter-spacing:.06em}
+.b-map{grid-column:span 4;grid-row:span 2}
+.b-2{grid-column:span 2}
+.b-3{grid-column:span 3}
+@media (max-width:1000px){.bento{grid-template-columns:repeat(2,minmax(0,1fr))}.b-map,.b-2,.b-3{grid-column:span 2;grid-row:auto}}
+.twin{background:var(--sunk);border-radius:14px;padding:12px;margin-top:6px}
+.twin svg{width:100%;height:auto;display:block}
+.eta-demo{display:grid;gap:6px;font:600 .82rem var(--f-mono);margin-top:4px}
+.eta-demo div{display:flex;justify-content:space-between;border-bottom:1px dashed var(--line);padding-bottom:6px}
+.esi-row{display:flex;gap:5px;margin-top:4px}
+.esi-row span{flex:1;border-radius:8px;color:#fff;font:800 .9rem var(--f-display);text-align:center;padding:8px 0}
+.speech{font:600 .92rem/1.5 var(--f-indic);display:grid;gap:6px;margin-top:4px}
+.speech span{background:var(--sunk);border-radius:12px 12px 12px 4px;padding:8px 12px;justify-self:start}
+.cp{display:grid;gap:8px;margin-top:4px;font-size:.85rem}
+.cp .u{justify-self:end;background:var(--brand);color:#fff;border-radius:12px 12px 4px 12px;padding:8px 12px}
+:root[data-theme="dark"] .cp .u{color:#06102A}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .cp .u{color:#06102A}}
+.cp .a{background:var(--sunk);border-radius:12px 12px 12px 4px;padding:8px 12px}
+.cp .t{font:500 .72rem var(--f-mono);color:var(--muted);border:1px dashed var(--line);border-radius:8px;padding:4px 8px;justify-self:start}
+
+/* install */
+.install{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,.9fr);gap:28px;align-items:start}
+@media (max-width:960px){.install{grid-template-columns:1fr}}
+.term{background:var(--night);border-radius:20px;overflow:hidden;box-shadow:var(--shadow-lg);min-width:0}
+.term-tabs{display:flex;gap:4px;padding:10px 10px 0;background:var(--night-2);flex-wrap:wrap}
+.term-tab{border:0;background:transparent;color:#8EA0D6;padding:10px 14px;border-radius:10px 10px 0 0;font:700 .84rem var(--f-body);cursor:pointer}
+.term-tab[aria-selected="true"]{background:var(--night);color:#fff}
+.term pre{margin:0;padding:22px 22px 8px;color:#DDE4F7;font:500 .9rem/1.8 var(--f-mono);overflow-x:auto}
+.term pre .c{color:#6F80B6}
+.term pre .p{color:var(--led)}
+.term-foot{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 22px 18px;flex-wrap:wrap}
+.term-foot span{color:#8EA0D6;font-size:.84rem}
+.copy{border:1px solid var(--night-line);background:var(--night-2);color:#fff;border-radius:9px;padding:8px 12px;font:700 .8rem var(--f-body);cursor:pointer}
+.wsteps{display:grid;gap:12px;counter-reset:w}
+.wstep{display:grid;grid-template-columns:44px 1fr;gap:14px;align-items:start;background:var(--paper);border:1px solid var(--line);border-radius:16px;padding:16px}
+.wstep::before{counter-increment:w;content:counter(w);width:44px;height:44px;border-radius:12px;background:var(--brand-soft);color:var(--brand);display:grid;place-items:center;font:800 1.1rem var(--f-display)}
+.wstep p{color:var(--muted);font-size:.92rem;margin-top:2px}
+.reqs{display:flex;flex-wrap:wrap;gap:8px;margin-top:4px}
+.reqs span{font:600 .78rem var(--f-mono);background:var(--sunk);border-radius:8px;padding:6px 9px;color:var(--ink-2)}
+
+/* architecture */
+.arch{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,.8fr);gap:40px;align-items:center}
+@media (max-width:960px){.arch{grid-template-columns:1fr}}
+.arch-svg{background:var(--paper);border:1px solid var(--line);border-radius:22px;padding:18px;overflow-x:auto}
+.arch-svg svg{display:block;width:100%;min-width:560px;height:auto}
+.arch-svg text{font-family:var(--f-body)}
+.facts{display:grid;gap:0;border-top:1px solid var(--line)}
+.facts div{display:grid;grid-template-columns:150px 1fr;gap:14px;padding:14px 0;border-bottom:1px solid var(--line);font-size:.94rem}
+.facts b{font-weight:700}
+.facts span{color:var(--muted)}
+@media (max-width:560px){.facts div{grid-template-columns:1fr;gap:2px}}
+
+/* ROI */
+.roi{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);border-radius:24px;overflow:hidden;border:1px solid var(--line)}
+.roi .in{background:var(--paper);padding:34px;display:grid;gap:24px}
+.roi .out{background:var(--night);color:var(--night-text);padding:34px;display:grid;gap:20px;align-content:start}
+.roi .out b{display:block;font:800 2.4rem/1.05 var(--f-display);color:#fff;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.roi .out .big b{font-size:3.4rem;color:var(--led)}
+.roi .out span{font-size:.9rem;color:#8EA0D6}
+.rng{display:grid;gap:8px}
+.rng div{display:flex;justify-content:space-between;font-weight:600;font-size:.94rem}
+.rng output{font-family:var(--f-mono);color:var(--brand)}
+input[type=range]{width:100%;accent-color:var(--brand)}
+.hint{color:var(--muted);font-size:.86rem}
+@media (max-width:820px){.roi{grid-template-columns:1fr}}
+
+/* pricing */
+.bill{display:flex;align-items:center;gap:12px;margin-bottom:28px;font-weight:600;font-size:.94rem;flex-wrap:wrap}
+.save{font-size:.76rem;color:var(--ok);font-weight:700;background:color-mix(in srgb,var(--ok) 12%,transparent);padding:4px 8px;border-radius:99px}
+.tog{display:inline-flex;align-items:center;cursor:pointer}
+.tog input{appearance:none;width:40px;height:24px;border-radius:99px;background:var(--line);position:relative;cursor:pointer;margin:0;transition:background .2s}
+.tog input::after{content:"";position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:#fff;transition:transform .2s;box-shadow:0 1px 2px rgba(0,0,0,.2)}
+.tog input:checked{background:var(--brand)}
+.tog input:checked::after{transform:translateX(16px)}
+.plans{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px;align-items:stretch}
+.plan{background:var(--paper);border:1px solid var(--line);border-radius:22px;padding:30px;display:grid;gap:18px;grid-template-rows:auto auto auto 1fr auto}
+.plan.hot{border:2px solid var(--brand);box-shadow:var(--shadow-lg);position:relative}
+.plan.hot::before{content:"Most hospitals choose this";position:absolute;top:-13px;left:26px;background:var(--brand);color:#fff;font:700 .72rem/1 var(--f-body);padding:6px 10px;border-radius:99px}
+.price{font:800 2.6rem/1 var(--f-display);letter-spacing:-.03em}
+.price small{font:500 .9rem var(--f-body);color:var(--muted);letter-spacing:0}
+.plan ul{list-style:none;padding:0;margin:0;display:grid;gap:10px;font-size:.94rem}
+.plan li{display:grid;grid-template-columns:20px 1fr;gap:8px}
+.plan li::before{content:"";width:16px;height:16px;margin-top:4px;border-radius:5px;background:var(--brand-soft);box-shadow:inset 0 0 0 5px var(--brand-soft),inset 0 0 0 10px var(--brand)}
+.plan .who{color:var(--muted);font-size:.9rem}
+.selfhost{margin-top:18px;padding:18px 20px;border-radius:16px;border:1px dashed var(--line);display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;color:var(--muted)}
+.selfhost b{color:var(--ink)}
+@media (max-width:900px){.plans{grid-template-columns:1fr}}
+
+/* trust */
+.trust{display:grid;grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr);gap:48px;align-items:start}
+@media (max-width:900px){.trust{grid-template-columns:1fr}}
+
+/* faq */
+.faq{display:grid;gap:10px;max-width:880px}
+details{background:var(--paper);border:1px solid var(--line);border-radius:16px;padding:4px 22px}
+summary{cursor:pointer;font-weight:700;padding:16px 0;list-style:none;display:flex;justify-content:space-between;gap:12px}
+summary::-webkit-details-marker{display:none}
+summary::after{content:"+";font:700 1.2rem/1 var(--f-mono);color:var(--brand)}
+details[open] summary::after{content:"–"}
+details p{color:var(--muted);padding-bottom:18px;max-width:72ch}
+
+/* cta */
+.cta{background:linear-gradient(135deg,#1638B8,#1D4ED8 55%,#3B2BB8);color:#fff;border-radius:30px;padding:clamp(28px,5vw,56px);display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:44px;position:relative;overflow:hidden}
+.cta::after{content:"";position:absolute;right:-120px;top:-120px;width:420px;height:420px;border-radius:50%;border:60px solid rgba(255,181,71,.12)}
+.cta h2{color:#fff}
+.cta p{color:rgba(255,255,255,.86)}
+.cta ul{margin:20px 0 0;padding-left:18px;display:grid;gap:8px;color:rgba(255,255,255,.92)}
+.form{background:var(--paper);color:var(--ink);border-radius:20px;padding:24px;display:grid;gap:12px;position:relative;z-index:1}
+.form label{font-size:.78rem;font-weight:700;color:var(--muted)}
+.form input,.form select{width:100%;padding:11px 12px;border-radius:10px;border:1px solid var(--line);background:var(--paper);color:var(--ink);font:500 .95rem var(--f-body)}
+.form input:focus,.form select:focus{outline:2px solid var(--brand);border-color:transparent}
+.form .f2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.form .fld{display:grid;gap:5px}
+.form pre{white-space:pre-wrap;background:var(--sunk);padding:14px;border-radius:10px;font:500 .84rem/1.5 var(--f-mono);margin:0}
+@media (max-width:860px){.cta{grid-template-columns:1fr}}
+
+footer{padding-block:56px 64px;color:var(--muted);font-size:.9rem}
+.foot{display:grid;grid-template-columns:1.4fr repeat(3,1fr);gap:28px;border-top:1px solid var(--line);padding-top:36px}
+.foot h4{font:700 .78rem var(--f-body);letter-spacing:.12em;text-transform:uppercase;color:var(--ink);margin-bottom:12px}
+.foot a{display:block;color:var(--muted);text-decoration:none;padding:3px 0}
+.foot a:hover{color:var(--ink)}
+@media (max-width:760px){.foot{grid-template-columns:1fr 1fr}}
+@media (prefers-reduced-motion: reduce){*{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
+</style>
+</head>
+<body>
+<header class="nav">
+  <div class="wrap">
+    <a class="logo" href="#top" aria-label="RayCare OS home"><svg width="30" height="30" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="9" fill="#1D4ED8"/><path d="M8 22a12 12 0 0 1 16-11" stroke="#FF8A45" stroke-width="3" fill="none" stroke-linecap="round"/><circle cx="9" cy="22" r="2.4" fill="#fff"/><circle cx="16" cy="22" r="2.4" fill="#fff" opacity=".75"/><circle cx="23" cy="22" r="2.4" fill="#fff" opacity=".5"/></svg>RayCare <small>OS</small></a>
+    <nav class="nav-links" aria-label="Primary"><a href="#product">Product</a><a href="#install">Install</a><a href="#architecture">Technology</a><a href="#pricing">Pricing</a><a href="#faq">FAQ</a></nav>
+    <div class="nav-cta"><a class="btn btn-ghost btn-sm" href="app.html" data-app-link>Sign in</a><a class="btn btn-primary btn-sm" href="#demo">Book a demo</a></div>
+  </div>
+</header>
+
+<main id="top">
+<section class="hero">
+  <div class="wrap">
+    <div class="hero-copy">
+      <span class="eyebrow">Patient flow OS for hospitals</span>
+      <h1>Every patient knows their turn. Every department knows its <span class="hl">load.</span></h1>
+      <p class="lede">RayCare OS runs your OPD, emergency and wards from one live queue engine. Patients get an honest wait time on their phone, emergencies move by acuity, and your team sees the whole hospital on one screen.</p>
+      <div class="hero-cta">
+        <a class="btn btn-primary" href="app.html" data-app-link>Open the live demo <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+        <a class="btn btn-ghost" href="#install">Install in 15 minutes</a>
+      </div>
+      <a class="research" href="https://doi.org/10.6084/m9.figshare.30545999" target="_blank" rel="noopener"><span class="badge"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19V5a2 2 0 0 1 2-2h12v18H6a2 2 0 0 1-2-2zM4 19a2 2 0 0 1 2-2h12M9 7h6"/></svg></span><span><b>Built on peer-reviewed research</b><span>Published at the ORCHIDS International Conference · read the paper</span></span></a>
+    </div>
+
+    <div class="stage" aria-label="Live product preview with simulated data">
+      <div class="ledstrip"><div class="lbl" id="hLang">Now serving</div><div class="row"><span class="tok" id="hTok">C-116</span><span class="rm" id="hRoom">→ OPD 4</span></div></div>
+      <div class="win">
+        <div class="win-bar"><i></i><i></i><i></i><span class="url">raycare.yourhospital.in/app</span></div>
+        <div class="win-body">
+          <div class="mini-rail" aria-hidden="true"><i class="on"></i><i></i><i></i><i></i><i></i><i></i></div>
+          <div class="win-main">
+            <div style="display:flex;justify-content:space-between;align-items:baseline;gap:8px"><h4>Live operations</h4><span class="mono" style="font-size:.74rem;color:var(--muted)" id="hClock">10:40</span></div>
+            <div class="tiles" id="hTiles"></div>
+            <div class="loads" id="hLoads"></div>
+            <div class="er-line" id="hEr"></div>
+          </div>
+        </div>
+      </div>
+      <div class="phone" aria-hidden="true"><div class="scr"><small>Your visit · Cardiology</small><div class="ring"><svg viewBox="0 0 118 118"><circle cx="59" cy="59" r="49" stroke="var(--sunk)" stroke-width="10" fill="none"/><circle id="hRing" cx="59" cy="59" r="49" stroke="#E0457B" stroke-width="10" fill="none" stroke-linecap="round" stroke-dasharray="308" stroke-dashoffset="120" style="transition:stroke-dashoffset .8s"/></svg><div class="in"><div><small>TOKEN</small><div class="tk" id="hPTok">C-121</div></div></div></div><div class="row3"><div><b id="hPos">4</b><small>Position</small></div><div><b id="hEta">31m</b><small>Est. wait</small></div></div><div class="msg">SMS · 3 patients ahead. Please come back to the waiting area.</div></div></div>
+    </div>
+  </div>
+</section>
+
+<div class="compat" aria-label="Works with">
+  <div class="wrap">
+    <span class="lead">Works with what you have</span>
+    <span class="item"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 5h18v12H3zM8 21h8"/></svg>Any smart TV</span>
+    <span class="item"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M7 2h10v20H7zM11 18h2"/></svg>Any phone, no app</span>
+    <span class="item"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 9V3h12v6M6 18H4v-7h16v7h-2M6 14h12v7H6z"/></svg>58 mm token printers</span>
+    <span class="item"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 4h16v16H4zM4 12h16M12 4v16"/></svg>ABHA-ready</span>
+    <span class="item"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>SMS and WhatsApp gateways</span>
+    <span class="item"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M8 3H5a2 2 0 0 0-2 2v3M21 8V5a2 2 0 0 0-2-2h-3M3 16v3a2 2 0 0 0 2 2h3M16 21h3a2 2 0 0 0 2-2v-3"/></svg>Your HIS via webhooks</span>
+  </div>
+</div>
+
+<section id="product">
+  <div class="wrap">
+    <div class="sec-head"><span class="eyebrow">Why hospitals switch</span><h2>The OPD corridor problem, solved at the source</h2><p class="lede">A printed number tells a patient nothing. RayCare replaces guesswork with a live model of every queue in the building.</p></div>
+    <div class="pb">
+      <article><span class="k">CROWDED CORRIDORS</span><h3>Patients wait where they can see the door</h3><p class="before">Without a reliable wait time, nobody dares leave. Corridors fill, infection risk rises and staff field "how long?" all day.</p><p class="after">Each patient gets a live ETA that learns from the doctor's real pace, plus a message when three people are ahead.</p></article>
+      <article><span class="k">EMERGENCIES IN LINE</span><h3>Acuity gets lost in arrival order</h3><p class="before">A chest-pain patient can sit behind a prescription refill because the list is sorted by who came first.</p><p class="after">Five-level ESI triage places patients by acuity, pages the team for ESI 1–2 and logs every override.</p></article>
+      <article><span class="k">NO LIVE PICTURE</span><h3>Administrators find out after the fact</h3><p class="before">Bottlenecks surface in complaints and end-of-month reports, when nothing can be changed.</p><p class="after">A live floor map, SLA alerts and an hourly forecast show where to move a doctor while there is still time.</p></article>
+    </div>
+  </div>
+</section>
+
+<section style="padding-top:0">
+  <div class="wrap">
+    <div class="journey">
+      <div class="sec-head" style="margin:0"><span class="eyebrow" style="color:var(--led)">One engine, every role</span><h2>Built around the people who use it</h2><p class="lede">Every screen reads the same live data, so the lobby TV, the doctor's console and the patient's phone always agree.</p></div>
+      <div class="jtabs" role="tablist" aria-label="Roles">
+        <button class="jtab" role="tab" aria-selected="true" data-j="desk">Front desk</button>
+        <button class="jtab" role="tab" aria-selected="false" data-j="doctor">Doctor</button>
+        <button class="jtab" role="tab" aria-selected="false" data-j="er">Emergency</button>
+        <button class="jtab" role="tab" aria-selected="false" data-j="patient">Patient</button>
+        <button class="jtab" role="tab" aria-selected="false" data-j="admin">Administrator</button>
+      </div>
+      <div class="jpanel" role="tabpanel" data-p="desk"><ul><li><div><b>Register in under 30 seconds</b><span>Returning patients are matched by phone or ABHA number.</span></div></li><li><div><b>Fair priority, built in</b><span>Seniors and pregnant women move ahead of walk-ins, never ahead of emergencies.</span></div></li><li><div><b>A slip with a QR code</b><span>Patients scan it to follow their turn live.</span></div></li></ul>
+        <div class="jshot"><div class="m-split"><div class="m-form"><div class="m-f">Full name <b>Anita Sharma</b></div><div class="m-row"><div class="m-f">Mobile <b>98xxxxx210</b></div><div class="m-f">Age <b>42</b></div></div><div class="m-f">Department <b>Cardiology</b></div><div class="m-row"><div class="m-f">Alerts <b>తెలుగు</b></div><div class="m-f">Priority <b>Standard</b></div></div><div class="m-btn">Issue token</div></div><div class="m-slip">SUNRISE MULTISPECIALITY<br>CARDIOLOGY · OPD 4<b>C-121</b>Ahead 3 · ~31 min</div></div></div></div>
+      <div class="jpanel" role="tabpanel" data-p="doctor" hidden><ul><li><div><b>One tap to call, complete and route</b><span>Prescription, lab, imaging, referral or admission.</span></div></li><li><div><b>Referrals keep their place</b><span>The patient joins the next queue with priority.</span></div></li><li><div><b>Admit requests a bed</b><span>The ward team sees it instantly.</span></div></li></ul>
+        <div class="jshot"><div class="m-consult"><div><div style="font-size:.72rem;color:#7F90C3">IN CONSULT · OPD 4</div><div class="t">C-116</div></div><div><b style="color:#fff">Ravi Kumar</b><div style="font-size:.78rem">58 M · ABHA linked · waited 14 min</div></div><div class="clk">07:42</div></div><div class="m-outs"><span>Prescription issued</span><span>Lab tests ordered</span><span>Imaging ordered</span><span>Follow-up</span><span class="o">Admit</span></div></div></div>
+      <div class="jpanel" role="tabpanel" data-p="er" hidden><ul><li><div><b>Triage in five observations</b><span>SpO₂, pulse, BP, responsiveness and pain suggest an ESI level with reasons.</span></div></li><li><div><b>Ambulance pre-alerts</b><span>The bay is prepared before the doors open.</span></div></li><li><div><b>Code Blue on every screen</b><span>One tap, hospital-wide, with the location.</span></div></li></ul>
+        <div class="jshot"><div class="m-lane"><span class="h" style="background:#D92D20">ESI 1</span><div class="c"><span>E-109</span></div></div><div class="m-lane"><span class="h" style="background:#E8641A">ESI 2</span><div class="c"><span>E-110</span><span>E-112</span></div></div><div class="m-lane"><span class="h" style="background:#C98A04">ESI 3</span><div class="c"><span>E-108</span></div></div><div class="m-lane"><span class="h" style="background:#15803D">ESI 4</span><div class="c"><span>E-111</span></div></div><div class="m-lane"><span class="h" style="background:#2563EB">ESI 5</span><div class="c"></div></div></div></div>
+      <div class="jpanel" role="tabpanel" data-p="patient" hidden><ul><li><div><b>No app to install</b><span>A link by SMS or a QR code on the slip.</span></div></li><li><div><b>"I'm running late"</b><span>Moves them back three places instead of losing their turn.</span></div></li><li><div><b>Their language</b><span>English, हिन्दी, తెలుగు and more, on screens, messages and voice calls.</span></div></li></ul>
+        <div class="jshot" style="display:grid;place-items:center"><div class="phone" style="position:relative;right:auto;bottom:auto"><div class="scr"><small>మీ సందర్శన · Cardiology</small><div class="ring"><svg viewBox="0 0 118 118"><circle cx="59" cy="59" r="49" stroke="#E9EEF6" stroke-width="10" fill="none"/><circle cx="59" cy="59" r="49" stroke="#E0457B" stroke-width="10" fill="none" stroke-linecap="round" stroke-dasharray="308" stroke-dashoffset="90"/></svg><div class="in"><div><small>TOKEN</small><div class="tk">C-121</div></div></div></div><div class="row3"><div><b>2</b><small>స్థానం</small></div><div><b>12m</b><small>నిరీక్షణ</small></div></div></div></div></div></div>
+      <div class="jpanel" role="tabpanel" data-p="admin" hidden><ul><li><div><b>SLA alerts before complaints</b><span>Set busy and over-SLA thresholds per hospital.</span></div></li><li><div><b>Forecasts and rebalancing</b><span>See the afternoon peak coming and where to move a doctor.</span></div></li><li><div><b>Audit log and CSV export</b><span>Every action, who took it and when.</span></div></li></ul>
+        <div class="jshot"><div style="display:flex;justify-content:space-between;align-items:baseline"><b style="font-family:var(--f-display)">Patients seen per hour</b><span style="font-size:.76rem;color:#5A6781">today · forecast</span></div><div class="m-bars"><i style="height:36%"></i><i style="height:66%"></i><i style="height:78%"></i><i class="f" style="height:84%"></i><i class="f" style="height:70%"></i><i class="f" style="height:42%"></i><i class="f" style="height:56%"></i><i class="f" style="height:60%"></i></div><div style="display:flex;justify-content:space-between;font:500 .7rem var(--f-mono);color:#5A6781;margin-top:6px"><span>8a</span><span>10a</span><span>12p</span><span>2p</span><span>3p</span></div></div></div>
+    </div>
+  </div>
+</section>
+
+<section style="padding-top:0">
+  <div class="wrap">
+    <div class="sec-head"><span class="eyebrow">What's inside</span><h2>Everything a patient-flow team needs, nothing it doesn't</h2></div>
+    <div class="bento">
+      <article class="bx b-map"><span class="tag">DIGITAL TWIN</span><h3>See the whole OPD at a glance</h3><p>A live floor map where every waiting patient is a dot in their seat, coloured by department. Rooms turn amber and red as waits cross your service levels.</p><div class="twin"><svg id="twin" viewBox="0 0 640 250" role="img" aria-label="Floor map preview"></svg></div></article>
+      <article class="bx b-2"><span class="tag">ETA ENGINE</span><h3>Wait times that learn</h3><p>After five consults, estimates follow each room's real pace, not a guess.</p><div class="eta-demo"><div><span>Configured</span><span>11.0 min</span></div><div><span>Learned today</span><span style="color:var(--brand)">8.6 min</span></div></div></article>
+      <article class="bx b-2"><span class="tag">ESI 1–5</span><h3>Acuity-first emergency</h3><p>Suggested level with reasons. Clinicians confirm.</p><div class="esi-row"><span style="background:var(--crit)">1</span><span style="background:var(--signal)">2</span><span style="background:#C98A04">3</span><span style="background:var(--ok)">4</span><span style="background:#2563EB">5</span></div></article>
+      <article class="bx b-3"><span class="tag">MULTILINGUAL</span><h3>Speaks your patients' language</h3><p>Messages, lobby screens and spoken announcements.</p><div class="speech"><span>Token C-121, please proceed to OPD 4.</span><span>टोकन C-121, कृपया OPD 4 में जाएँ।</span><span>టోకెన్ C-121, దయచేసి OPD 4 కి వెళ్ళండి.</span></div></article>
+      <article class="bx b-3"><span class="tag">AI COPILOT</span><h3>Run the floor by asking</h3><p>Copilot reads live data and acts within the signed-in user's permissions.</p><div class="cp"><span class="u">Which department needs help?</span><span class="t">→ get_snapshot</span><span class="a">Cardiology has 9 waiting, about 64 minutes. Moving a doctor from Dermatology would halve it.</span></div></article>
+      <article class="bx b-2"><span class="tag">BEDS</span><h3>Admission to bed in one tap</h3><p>Best-fit ward, cleaning turnover and live occupancy.</p></article>
+      <article class="bx b-2"><span class="tag">APPOINTMENTS</span><h3>Bookings that blend fairly</h3><p>15-minute slots, one-tap check-in, automatic no-shows.</p></article>
+      <article class="bx b-2"><span class="tag">AUDIT</span><h3>Every action accounted for</h3><p>Who called, triaged, overrode or discharged, and when.</p></article>
+    </div>
+  </div>
+</section>
+
+<section id="install" style="padding-top:0">
+  <div class="wrap">
+    <div class="sec-head"><span class="eyebrow">Installation</span><h2>From download to first token in an afternoon</h2><p class="lede">RayCare runs on your own server with one small program and a single database file. No database server to manage, no cloud lock-in, and patient data stays in your building.</p></div>
+    <div class="install">
+      <div class="term">
+        <div class="term-tabs" role="tablist" aria-label="Install method"><button class="term-tab" role="tab" aria-selected="true" data-t="docker">Docker</button><button class="term-tab" role="tab" aria-selected="false" data-t="node">Node.js</button><button class="term-tab" role="tab" aria-selected="false" data-t="win">Windows</button></div>
+        <pre data-tp="docker"><span class="c"># 1. Get RayCare</span>
+<span class="p">$</span> git clone https://github.com/RayeesaMahmood/RayCare.git
+<span class="p">$</span> cd RayCare
+
+<span class="c"># 2. Start it (data is kept in ./data)</span>
+<span class="p">$</span> docker compose up -d
+
+<span class="c"># 3. Open the setup wizard</span>
+<span class="p">→</span> http://localhost:8080/app/</pre>
+        <pre data-tp="node" hidden><span class="c"># Needs Node.js 22.5 or newer</span>
+<span class="p">$</span> git clone https://github.com/RayeesaMahmood/RayCare.git
+<span class="p">$</span> cd RayCare
+<span class="p">$</span> ./install.sh      <span class="c"># checks Node, installs, creates .env</span>
+<span class="p">$</span> npm start
+
+<span class="c"># Try it with a simulated hospital first</span>
+<span class="p">$</span> npm run demo</pre>
+        <pre data-tp="win" hidden><span class="c"># PowerShell, with Node.js 22 LTS installed</span>
+<span class="p">&gt;</span> git clone https://github.com/RayeesaMahmood/RayCare.git
+<span class="p">&gt;</span> cd RayCare
+<span class="p">&gt;</span> .\install.ps1
+<span class="p">&gt;</span> npm start
+
+<span class="p">→</span> http://localhost:8080/app/</pre>
+        <div class="term-foot"><span>One dependency · one database file · runs offline on your LAN</span><button class="copy" type="button" id="copyCmd">Copy commands</button></div>
+      </div>
+      <div class="wsteps">
+        <div class="wstep"><div><b>Name your hospital</b><p>Hospital name, city and whether patients can check in by QR.</p></div></div>
+        <div class="wstep"><div><b>Pick departments</b><p>Tick from ten specialties, set rooms and doctors.</p></div></div>
+        <div class="wstep"><div><b>Wards and languages</b><p>Bed counts for ICU, general and paediatric wards, plus patient languages.</p></div></div>
+        <div class="wstep"><div><b>Create your admin account</b><p>Then add staff, open the lobby TV and print the QR poster.</p><div class="reqs"><span>1 GB RAM</span><span>Linux · Windows · macOS</span><span>Any browser</span></div></div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="architecture" style="padding-top:0">
+  <div class="wrap arch">
+    <div class="arch-svg"><svg viewBox="0 0 640 360" role="img" aria-label="RayCare architecture: screens connect to the RayCare server, which runs the queue engine and stores data in SQLite">
+      <defs><marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="var(--muted)"/></marker></defs>
+      <text x="20" y="28" font-size="11" font-weight="700" fill="var(--muted)" letter-spacing="1.5">SCREENS</text>
+      <g font-size="12" font-weight="600" fill="var(--ink)">
+        <rect x="20" y="42" width="150" height="40" rx="10" fill="var(--sunk)" stroke="var(--line)"/><text x="36" y="67">Staff app (roles)</text>
+        <rect x="20" y="92" width="150" height="40" rx="10" fill="var(--sunk)" stroke="var(--line)"/><text x="36" y="117">Lobby TV</text>
+        <rect x="20" y="142" width="150" height="40" rx="10" fill="var(--sunk)" stroke="var(--line)"/><text x="36" y="167">Patient tracker</text>
+        <rect x="20" y="192" width="150" height="40" rx="10" fill="var(--sunk)" stroke="var(--line)"/><text x="36" y="217">QR check-in</text>
+      </g>
+      <path d="M172 62H236M172 112H236M172 162H236M172 212H236" stroke="var(--muted)" stroke-width="1.5" marker-end="url(#ar)" fill="none"/>
+      <text x="178" y="252" font-size="10.5" fill="var(--muted)">REST commands</text><text x="178" y="266" font-size="10.5" fill="var(--muted)">+ live stream (SSE)</text>
+      <rect x="240" y="30" width="200" height="220" rx="16" fill="var(--brand-soft)" stroke="var(--brand)" stroke-width="1.5"/>
+      <text x="258" y="56" font-size="13" font-weight="800" fill="var(--brand)">RayCare server</text>
+      <g font-size="11.5" fill="var(--ink)"><rect x="256" y="68" width="168" height="30" rx="8" fill="var(--paper)"/><text x="268" y="87">Auth · roles · rate limits</text><rect x="256" y="106" width="168" height="30" rx="8" fill="var(--paper)"/><text x="268" y="125">Runtime (one command at a time)</text><rect x="256" y="144" width="168" height="30" rx="8" fill="var(--paper)"/><text x="268" y="163">Queue engine · triage · beds</text><rect x="256" y="182" width="168" height="30" rx="8" fill="var(--paper)"/><text x="268" y="201">Notifier · Copilot · export</text></g>
+      <text x="258" y="236" font-size="10.5" fill="var(--brand)">Node.js · Express</text>
+      <path d="M442 160H500" stroke="var(--muted)" stroke-width="1.5" marker-end="url(#ar)" fill="none"/><path d="M442 90H500" stroke="var(--muted)" stroke-width="1.5" marker-end="url(#ar)" fill="none"/>
+      <rect x="504" y="60" width="118" height="60" rx="12" fill="var(--sunk)" stroke="var(--line)"/><text x="518" y="86" font-size="12" font-weight="700" fill="var(--ink)">SMS / WhatsApp</text><text x="518" y="104" font-size="10.5" fill="var(--muted)">signed webhooks</text>
+      <path d="M504 140h118v60c0 8-26 14-59 14s-59-6-59-14z" fill="var(--sunk)" stroke="var(--line)"/><ellipse cx="563" cy="140" rx="59" ry="12" fill="var(--paper)" stroke="var(--line)"/><text x="522" y="178" font-size="12" font-weight="700" fill="var(--ink)">SQLite (WAL)</text><text x="522" y="196" font-size="10.5" fill="var(--muted)">one file · backups</text>
+      <rect x="20" y="292" width="602" height="46" rx="12" fill="none" stroke="var(--line)" stroke-dasharray="5 5"/><text x="38" y="320" font-size="12" fill="var(--muted)">The same engine file runs in the browser for the offline demo, so what you test is what you deploy.</text>
+    </svg></div>
+    <div style="display:grid;gap:22px">
+      <div class="sec-head" style="margin:0"><span class="eyebrow">For your IT team</span><h2>A backend you can reason about</h2></div>
+      <div class="facts">
+        <div><b>Single source of truth</b><span>Every change is a validated command, persisted in one transaction and streamed to every screen.</span></div>
+        <div><b>No race conditions</b><span>Commands run one at a time, so two desks can never call the same patient.</span></div>
+        <div><b>Security</b><span>scrypt passwords, signed expiring sessions, role checks on every command, signed patient links, strict security headers.</span></div>
+        <div><b>Tested</b><span>Automated tests cover triage, queue order, beds, permissions, persistence and the public API.</span></div>
+        <div><b>Yours to run</b><span>Self-host on premises or any cloud VM. Back up by copying one file.</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="roi" style="padding-top:0">
+  <div class="wrap">
+    <div class="sec-head"><span class="eyebrow">ROI estimator</span><h2>What shorter waits are worth</h2></div>
+    <div class="roi">
+      <div class="in">
+        <div class="rng"><div><label for="rV">OPD visits per day</label><output id="oV" class="mono"></output></div><input type="range" id="rV" min="50" max="5000" step="50" value="800"></div>
+        <div class="rng"><div><label for="rW">Average wait today (minutes)</label><output id="oW" class="mono"></output></div><input type="range" id="rW" min="10" max="180" step="5" value="70"></div>
+        <div class="rng"><div><label for="rD">Front-desk staff</label><output id="oD" class="mono"></output></div><input type="range" id="rD" min="1" max="40" value="6"></div>
+        <p class="hint">Assumes waits fall by 35% and one in four patients stops asking the desk for an update. Your pilot measures the real figures.</p>
+      </div>
+      <div class="out"><div class="big"><b id="xH">0</b><span>patient hours of waiting removed each month</span></div><div><b id="xW">0 min</b><span>new average wait</span></div><div><b id="xS">0 hrs</b><span>front-desk time freed each month</span></div></div>
+    </div>
+  </div>
+</section>
+
+<section id="pricing" style="padding-top:0">
+  <div class="wrap">
+    <div class="sec-head"><span class="eyebrow">Pricing</span><h2>Priced per site, never per patient</h2><p class="lede">Every plan includes setup, training and unlimited staff accounts. Prices exclude GST.</p></div>
+    <div class="bill"><span>Monthly</span><label class="tog"><input type="checkbox" id="annual" aria-label="Bill annually"></label><span>Annually</span><span class="save">Save 15%</span></div>
+    <div class="plans">
+      <div class="plan"><h3>Clinic</h3><p class="who">Polyclinics and nursing homes</p><div class="price" data-m="4999">₹4,999<small> /month</small></div><ul><li>Up to 5 doctors, 1 location</li><li>QR check-in and lobby display</li><li>Patient tracking links</li><li>Appointments and records</li><li>English + 1 regional language</li></ul><a class="btn btn-ghost" href="#demo">Start a pilot</a></div>
+      <div class="plan hot"><h3>Hospital</h3><p class="who">Multispecialty hospitals, 50–500 beds</p><div class="price" data-m="19999">₹19,999<small> /month</small></div><ul><li>Up to 60 doctors, unlimited departments</li><li>ESI emergency triage and ambulance pre-alerts</li><li>Bed management and admissions</li><li>Live floor map, forecasts and SLA alerts</li><li>Voice announcements in 3 languages</li><li>AI Copilot and audit exports</li><li>Priority support, 7 days a week</li></ul><a class="btn btn-primary" href="#demo">Start a pilot</a></div>
+      <div class="plan"><h3>Network</h3><p class="who">Hospital chains and medical colleges</p><div class="price">Custom</div><ul><li>Multiple sites, one command view</li><li>Custom roles and single sign-on</li><li>HIS integration support</li><li>Dedicated success manager</li><li>On-premises deployment help</li></ul><a class="btn btn-ghost" href="#demo">Talk to us</a></div>
+    </div>
+    <div class="selfhost"><span><b>Every plan is self-hosted by default.</b> Your data stays on your server. Managed hosting is available on request.</span><a class="btn btn-ghost btn-sm" href="#install">See installation</a></div>
+  </div>
+</section>
+
+<section id="security" style="padding-top:0">
+  <div class="wrap trust">
+    <div class="sec-head" style="margin:0"><span class="eyebrow">Privacy and security</span><h2>Patient data treated as clinical data</h2><p class="lede">A queue holds names, phone numbers and complaints. RayCare is designed around India's Digital Personal Data Protection Act from the first day of a pilot.</p></div>
+    <div class="facts">
+      <div><b>Consent</b><span>QR check-in records consent before any message is sent.</span></div>
+      <div><b>Minimal display</b><span>Lobby screens show tokens only, never names or complaints.</span></div>
+      <div><b>Private links</b><span>Each patient's tracking link carries its own secret key.</span></div>
+      <div><b>Least privilege</b><span>Desk, doctor, nurse and admin roles see only what they need.</span></div>
+      <div><b>Audit trail</b><span>Every action is logged with the person and time.</span></div>
+      <div><b>Data residency</b><span>Self-hosted in your building or your chosen Indian data centre.</span></div>
+    </div>
+  </div>
+</section>
+
+<section id="faq" style="padding-top:0">
+  <div class="wrap">
+    <div class="sec-head"><span class="eyebrow">FAQ</span><h2>Questions hospital teams ask</h2></div>
+    <div class="faq">
+      <details><summary>Do we have to replace our HIS or billing system?</summary><p>No. RayCare runs beside your HIS. Start standalone on day one, then send events to your HIS or any integration tool through signed webhooks.</p></details>
+      <details><summary>What hardware do we need?</summary><p>One small server or office PC on your network, or a cloud VM. Any smart TV runs the lobby display in its browser, staff use any browser, and a 58 mm thermal printer is optional for token slips.</p></details>
+      <details><summary>How are wait times calculated?</summary><p>For each room, RayCare combines the patients ahead, their priority and the doctor's real consult pace today. Once five consults are complete, estimates follow the actual pace rather than the configured average.</p></details>
+      <details><summary>What about patients without smartphones?</summary><p>They get a printed slip, SMS messages work on basic phones, and spoken announcements call each token in the patient's language.</p></details>
+      <details><summary>How do SMS and WhatsApp messages get sent?</summary><p>RayCare posts each message to a webhook you choose, signed so your gateway can verify it. That keeps you free to use any SMS or WhatsApp provider your hospital already pays for.</p></details>
+      <details><summary>Does the AI Copilot see patient data?</summary><p>Copilot is optional and off unless an administrator adds an API key. It works from the live operations snapshot and every action it takes runs with the signed-in user's permissions and appears in the audit log.</p></details>
+      <details><summary>How do we back up?</summary><p>All data lives in one database file. Run <span class="mono">npm run backup</span> on a schedule, or copy the data folder with your existing backup tool.</p></details>
+    </div>
+  </div>
+</section>
+
+<section id="demo" style="padding-top:0">
+  <div class="wrap">
+    <div class="cta">
+      <div><span class="eyebrow" style="color:#FFD2B5">30-day pilot</span><h2 style="margin-top:14px">See your own OPD run calmer in a month</h2><p style="margin-top:16px">Tell us about your hospital. We set up one department with you, train your team and share a before-and-after report.</p><ul><li>No hardware to buy</li><li>No change to your HIS</li><li>Your data never leaves your server</li></ul></div>
+      <div class="form" id="formBox">
+        <form id="pilot" style="display:grid;gap:12px">
+          <div class="fld"><label for="fH">Hospital name</label><input id="fH" required placeholder="e.g. Sunrise Multispeciality Hospital"></div>
+          <div class="f2"><div class="fld"><label for="fN">Your name</label><input id="fN" required></div><div class="fld"><label for="fR">Role</label><select id="fR"><option>Medical Superintendent</option><option>Hospital Administrator</option><option>CEO / Director</option><option>IT Head</option><option>Nursing Head</option><option>Other</option></select></div></div>
+          <div class="f2"><div class="fld"><label for="fP">Phone</label><input id="fP" type="tel" required></div><div class="fld"><label for="fC">City</label><input id="fC" placeholder="Hyderabad"></div></div>
+          <div class="fld"><label for="fV">OPD visits per day</label><select id="fV"><option>Under 200</option><option selected>200–1,000</option><option>1,000–3,000</option><option>Over 3,000</option></select></div>
+          <button class="btn btn-primary" type="submit">Request a pilot</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</section>
+</main>
+
+<footer>
+  <div class="wrap foot">
+    <div style="display:grid;gap:12px;align-content:start"><a class="logo" href="#top" style="font-size:1.05rem">RayCare <small>OS</small></a><p style="max-width:34ch">Patient flow software for hospitals and clinics. Made in Hyderabad.</p><p>© 2026 RayCare · Rayeesa Mahmood</p></div>
+    <div><h4>Product</h4><a href="app.html" data-app-link>Live demo</a><a href="#product">Features</a><a href="#pricing">Pricing</a><a href="#security">Security</a></div>
+    <div><h4>Deploy</h4><a href="#install">Installation</a><a href="#architecture">Architecture</a><a href="tv.html">Lobby display</a><a href="checkin.html">QR check-in</a></div>
+    <div><h4>Research</h4><a href="https://doi.org/10.6084/m9.figshare.30545999" target="_blank" rel="noopener">ORCHIDS paper</a><a href="https://github.com/RayeesaMahmood/RayCare" target="_blank" rel="noopener">Source on GitHub</a></div>
+  </div>
+</footer>
+
+<script>
+/*!
+ * RayCare engine — the single source of truth for queue, triage, bed and
+ * appointment logic. Pure JavaScript, no dependencies.
+ *
+ * The same file runs in two places:
+ *   - on the server (Node.js), wrapped with persistence, auth and realtime
+ *   - in the browser, for the offline demo mode
+ *
+ * Every change goes through `engine.dispatch(command, payload, actor, now)`.
+ * The engine records what changed; `engine.takeDelta()` returns those
+ * entities so the server can persist them and stream them to clients, and
+ * `applyDelta(state, delta)` merges them into a client-side copy.
+ */
+(function (root, factory) {
+  if (typeof module === 'object' && module.exports) module.exports = factory();
+  else root.RayCareEngine = factory();
+})(typeof globalThis !== 'undefined' ? globalThis : this, function () {
+  'use strict';
+
+  const MIN = 60000;
+  const VERSION = '2.0.0';
+
+  /* ------------------------------------------------------------------ *
+   * Reference data
+   * ------------------------------------------------------------------ */
+  const TEMPLATES = {
+    GEN: { name: 'General Medicine', pre: 'G', avg: 6, color: '#3B6FF5' },
+    PED: { name: 'Paediatrics', pre: 'P', avg: 7, color: '#8B5CF6' },
+    CAR: { name: 'Cardiology', pre: 'C', avg: 11, color: '#E0457B' },
+    DER: { name: 'Dermatology', pre: 'D', avg: 7, color: '#14A3A1' },
+    ORT: { name: 'Orthopaedics', pre: 'O', avg: 8, color: '#E8910C' },
+    ENT: { name: 'ENT', pre: 'N', avg: 7, color: '#0EA5E9' },
+    GYN: { name: 'Obstetrics & Gynaecology', pre: 'W', avg: 10, color: '#DB2777' },
+    OPH: { name: 'Ophthalmology', pre: 'Y', avg: 6, color: '#65A30D' },
+    DEN: { name: 'Dental', pre: 'T', avg: 12, color: '#F97316' },
+    NEU: { name: 'Neurology', pre: 'U', avg: 12, color: '#6366F1' }
+  };
+  const ER = { id: 'ER', name: 'Emergency', pre: 'E', avg: 14, color: '#E5484D', room: 'Resus bay', doc: 'On-call ER team', floor: 'East entrance, ambulance bay', open: true, rooms: 1 };
+  const WARD_TYPES = { ICU: { name: 'ICU', prefix: 'I' }, GW: { name: 'General Ward', prefix: 'A' }, PW: { name: 'Paediatric Ward', prefix: 'P' } };
+  const LANGS = { en: 'English', hi: 'हिन्दी', te: 'తెలుగు', ta: 'தமிழ்', kn: 'ಕನ್ನಡ', ur: 'اردو' };
+  const OUTCOMES = ['Prescription issued', 'Lab tests ordered', 'Imaging ordered', 'Follow-up in 2 weeks', 'Discharged home', 'Admit'];
+  const ESI_LABEL = { 1: 'Immediate', 2: 'Emergent', 3: 'Urgent', 4: 'Less urgent', 5: 'Non-urgent' };
+  const COMPLAINTS = { chest: 'Chest pain', stroke: 'Stroke signs', breath: 'Breathing difficulty', trauma: 'Injury / accident', abdo: 'Abdominal pain', fever: 'Fever', minor: 'Minor cut or sprain', rx: 'Prescription refill' };
+  /* Typical OPD arrival profile by hour (relative). Used for the forecast. */
+  const PROFILE = { 8: 0.55, 9: 0.9, 10: 1, 11: 1, 12: 0.85, 13: 0.5, 14: 0.7, 15: 0.75, 16: 0.55, 17: 0.3 };
+  const CLEANING_MIN = 20;
+  const MAX_LATE = 2;
+
+  /* Who may run which command. `system` is the server itself. */
+  const COMMANDS = {
+    registerPatient: ['admin', 'desk', 'system'],
+    callNext: ['admin', 'desk', 'doctor', 'nurse', 'system'],
+    callVisit: ['admin', 'desk', 'doctor', 'nurse'],
+    completeVisit: ['admin', 'doctor', 'nurse', 'system'],
+    markNoShow: ['admin', 'desk', 'doctor', 'nurse'],
+    recall: ['admin', 'desk', 'doctor', 'nurse'],
+    runningLate: ['admin', 'desk', 'patient', 'system'],
+    triage: ['admin', 'nurse', 'doctor', 'system'],
+    overrideEsi: ['admin', 'doctor'],
+    ambulancePreAlert: ['admin', 'nurse', 'desk', 'system'],
+    prepareBay: ['admin', 'nurse', 'doctor'],
+    assignBed: ['admin', 'nurse'],
+    dischargeBed: ['admin', 'nurse', 'doctor'],
+    markBedReady: ['admin', 'nurse'],
+    bookAppointment: ['admin', 'desk'],
+    checkInAppointment: ['admin', 'desk'],
+    submitFeedback: ['admin', 'desk', 'patient', 'system'],
+    updateSettings: ['admin'],
+    updateDepartment: ['admin'],
+    addDepartment: ['admin'],
+    codeBlue: ['admin', 'nurse', 'doctor', 'desk'],
+    clearCodeBlue: ['admin', 'nurse', 'doctor'],
+    ackAlerts: ['admin', 'desk', 'doctor', 'nurse'],
+    markNotified: ['system']
+  };
+  const ROLES = { admin: 'Administrator', desk: 'Front desk', doctor: 'Doctor', nurse: 'Nurse', patient: 'Patient', system: 'System' };
+
+  class EngineError extends Error {
+    constructor(code, message) { super(message); this.name = 'EngineError'; this.code = code; }
+  }
+  const fail = (code, msg) => { throw new EngineError(code, msg); };
+
+  /* ------------------------------------------------------------------ *
+   * Time helpers (hospital local time)
+   * ------------------------------------------------------------------ */
+  const pad = n => String(n).padStart(2, '0');
+  function dayKey(ms) { const d = new Date(ms); return d.getFullYear() + pad(d.getMonth() + 1) + pad(d.getDate()); }
+  function startOfDay(ms) { const d = new Date(ms); d.setHours(0, 0, 0, 0); return d.getTime(); }
+  function atMinute(ms, minuteOfDay) { return startOfDay(ms) + minuteOfDay * MIN; }
+  function hourOf(ms) { return new Date(ms).getHours(); }
+  function mins(from, to) { return Math.max(0, Math.round((to - from) / MIN)); }
+  function hhmm(ms) { const d = new Date(ms); return pad(d.getHours()) + ':' + pad(d.getMinutes()); }
+  function clock12(ms) { const d = new Date(ms); const h = d.getHours(); return (h % 12 || 12) + ':' + pad(d.getMinutes()) + (h >= 12 ? ' PM' : ' AM'); }
+
+  /* ------------------------------------------------------------------ *
+   * Validation helpers
+   * ------------------------------------------------------------------ */
+  function str(v, field, { min = 0, max = 120, required = false } = {}) {
+    const s = v == null ? '' : String(v).trim().replace(/\s+/g, ' ');
+    if (required && !s) fail('invalid', `${field} is required`);
+    if (s.length < min) fail('invalid', `${field} is too short`);
+    if (s.length > max) fail('invalid', `${field} is too long (max ${max})`);
+    return s;
+  }
+  function num(v, field, { min = -Infinity, max = Infinity, fallback } = {}) {
+    if ((v === '' || v == null) && fallback !== undefined) return fallback;
+    const n = Number(v);
+    if (!Number.isFinite(n)) fail('invalid', `${field} must be a number`);
+    if (n < min || n > max) fail('invalid', `${field} must be between ${min} and ${max}`);
+    return n;
+  }
+  const digits = p => String(p || '').replace(/\D/g, '');
+  function maskPhone(p) { const d = digits(p); return d.length >= 10 ? d.slice(-10, -8) + 'xxxxx' + d.slice(-3) : ''; }
+
+  /* ------------------------------------------------------------------ *
+   * State
+   * ------------------------------------------------------------------ */
+  function createState(cfg = {}) {
+    const h = cfg.hospital || {};
+    const depts = (cfg.depts || []).map((d, i) => {
+      const t = TEMPLATES[d.id] || {};
+      return {
+        id: d.id, name: d.name || t.name || d.id, pre: d.pre || t.pre || d.id[0],
+        avg: d.avg || t.avg || 8, color: d.color || t.color || '#3B6FF5',
+        room: d.room || 'OPD ' + (i + 1), doc: d.doc || 'Duty doctor',
+        floor: d.floor || 'Ground floor', open: d.open !== false, rooms: 1
+      };
+    });
+    if (!depts.find(d => d.id === 'ER')) depts.push({ ...ER });
+    const beds = [];
+    (cfg.wards || [{ id: 'ICU', count: 8 }, { id: 'GW', count: 16 }, { id: 'PW', count: 10 }]).forEach(w => {
+      const t = WARD_TYPES[w.id]; if (!t) return;
+      for (let i = 1; i <= w.count; i++) beds.push({ id: t.prefix + '-' + pad(i), ward: w.id, status: 'free', pid: null, name: null, since: 0 });
+    });
+    return {
+      schema: 1,
+      hospital: {
+        name: h.name || 'My Hospital', city: h.city || '', langs: h.langs || ['en', 'hi', 'te'],
+        sla: { busy: 20, over: 45, ...(h.sla || {}) }, publicCheckin: h.publicCheckin !== false,
+        setupComplete: !!h.setupComplete, createdAt: h.createdAt || 0
+      },
+      depts,
+      wardNames: { ICU: 'ICU', GW: 'General Ward A', PW: 'Paediatric Ward', ...(cfg.wardNames || {}) },
+      counters: { day: '', tok: {}, patient: 1000, req: 1, amb: 1, fb: 1, alert: 1 },
+      serving: {},
+      visits: {}, patients: {}, beds, bedReqs: [], ambulances: [], appts: [], feedback: [], alerts: [],
+      audit: [], recall: null, codeBlue: null, lastCalls: [], v: 0
+    };
+  }
+
+  /* ------------------------------------------------------------------ *
+   * Selectors (pure reads)
+   * ------------------------------------------------------------------ */
+  const dept = (st, id) => st.depts.find(d => d.id === id);
+  const opdDepts = st => st.depts.filter(d => d.id !== 'ER');
+  const visitsList = st => Object.values(st.visits);
+  const todayVisits = (st, now) => { const k = dayKey(now); return visitsList(st).filter(v => v.day === k); };
+
+  /* Priority: ESI 1-2, ESI 3, priority flag, appointment, other ESI, walk-in. */
+  function sortKey(v) { return v.esi && v.esi <= 2 ? v.esi : v.esi === 3 ? 3 : v.pri ? 4 : v.appt ? 5 : v.esi ? 6 + v.esi : 9; }
+  function waiting(st, id) {
+    return visitsList(st).filter(v => v.dept === id && v.status === 'waiting')
+      .sort((a, b) => (sortKey(a) - sortKey(b)) || ((a.arrived + (a.lateOffset || 0)) - (b.arrived + (b.lateOffset || 0))));
+  }
+  /* Consult pace learns from today's real consults once there are 5 or more. */
+  function pace(st, id, now) {
+    const d = dept(st, id); if (!d) return 8;
+    const k = dayKey(now);
+    const durs = visitsList(st).filter(v => v.dept === id && v.day === k && v.status === 'done' && v.start && v.end && v.outcome !== 'No-show')
+      .sort((a, b) => b.end - a.end).slice(0, 20).map(v => (v.end - v.start) / MIN).filter(x => x > 0.5 && x < 90);
+    if (durs.length < 5) return d.avg;
+    durs.sort((a, b) => a - b);
+    const med = durs[Math.floor(durs.length / 2)];
+    return Math.max(2, Math.round((med * 0.7 + d.avg * 0.3) * 10) / 10);
+  }
+  function remaining(st, id, now) {
+    const c = st.serving[id] && st.visits[st.serving[id]];
+    if (!c) return 0;
+    return Math.max(1, Math.round(pace(st, id, now) - (now - c.start) / MIN));
+  }
+  function newWait(st, id, now) { return Math.round(remaining(st, id, now) + waiting(st, id).length * pace(st, id, now)); }
+  function eta(st, visitId, now) {
+    const v = st.visits[visitId]; if (!v || v.status !== 'waiting') return { pos: 0, mins: 0 };
+    const list = waiting(st, v.dept), i = list.indexOf(v);
+    return { pos: i + 1, mins: Math.round(remaining(st, v.dept, now) + i * pace(st, v.dept, now)) };
+  }
+  function slaStatus(st, m) { return m > st.hospital.sla.over ? 'over' : m > st.hospital.sla.busy ? 'busy' : 'ok'; }
+  function occupancy(st, ward) {
+    const b = st.beds.filter(x => !ward || x.ward === ward);
+    return { total: b.length, occupied: b.filter(x => x.status === 'occupied').length, free: b.filter(x => x.status === 'free').length, cleaning: b.filter(x => x.status === 'cleaning').length };
+  }
+  const openBedReqs = st => st.bedReqs.filter(r => r.status === 'open');
+  const inboundAmbulances = st => st.ambulances.filter(a => a.status === 'inbound');
+  const median = a => { if (!a.length) return 0; const s = a.slice().sort((x, y) => x - y); return Math.round(s[Math.floor(s.length / 2)]); };
+
+  function stats(st, now) {
+    const today = todayVisits(st, now);
+    const started = today.filter(v => v.start);
+    const waits = started.filter(v => v.dept !== 'ER').map(v => (v.start - v.arrived) / MIN);
+    const done = today.filter(v => v.status === 'done');
+    const hourly = {}, waitByHour = {}, waitByDept = {};
+    done.forEach(v => { const h = hourOf(v.end); hourly[h] = (hourly[h] || 0) + 1; });
+    started.forEach(v => {
+      const h = hourOf(v.start), w = (v.start - v.arrived) / MIN;
+      (waitByHour[h] = waitByHour[h] || []).push(w); (waitByDept[v.dept] = waitByDept[v.dept] || []).push(w);
+    });
+    const avg = a => a.length ? Math.round(a.reduce((x, y) => x + y, 0) / a.length) : 0;
+    const fb = st.feedback.filter(f => dayKey(f.t) === dayKey(now));
+    const appts = st.appts.filter(a => a.day === dayKey(now) && a.status !== 'open' && a.t < now);
+    const noShows = appts.filter(a => a.status === 'noshow').length;
+    const nowH = hourOf(now);
+    let expectedSoFar = 0; for (let h = 8; h <= nowH; h++) expectedSoFar += PROFILE[h] || 0;
+    const scale = expectedSoFar ? Math.max(8, today.filter(v => v.dept !== 'ER').length / expectedSoFar) : 30;
+    const forecast = {}; for (let h = nowH + 1; h <= 17; h++) if (PROFILE[h]) forecast[h] = Math.round(PROFILE[h] * scale);
+    return {
+      served: done.length, arrivals: today.length, waitingNow: visitsList(st).filter(v => v.status === 'waiting' && v.dept !== 'ER').length,
+      avgWait: avg(waits), medianWait: median(waits), slaCompliance: waits.length ? Math.round(waits.filter(w => w <= st.hospital.sla.over).length / waits.length * 100) : 100,
+      hourly, forecast, waitByHour: Object.fromEntries(Object.entries(waitByHour).map(([h, a]) => [h, avg(a)])),
+      waitByDept: Object.fromEntries(Object.entries(waitByDept).map(([d, a]) => [d, avg(a)])),
+      pulse: fb.length ? Math.round(fb.reduce((a, f) => a + f.stars, 0) / fb.length * 100) / 100 : 0, ratings: fb.length,
+      noShowRate: appts.length ? Math.round(noShows / appts.length * 100) : 0
+    };
+  }
+
+  function suggestion(st, now) {
+    const rows = opdDepts(st).filter(d => d.open).map(d => ({ d, m: newWait(st, d.id, now) }));
+    if (rows.length < 2) return null;
+    const hi = rows.reduce((a, b) => b.m > a.m ? b : a), lo = rows.reduce((a, b) => b.m < a.m ? b : a);
+    if (hi.m - lo.m <= 15) return null;
+    return { from: lo.d.id, to: hi.d.id, fromWait: lo.m, toWait: hi.m, expected: Math.round(hi.m / 2) };
+  }
+
+  /* Emergency Severity Index suggestion (simplified ESI v4 decision points). */
+  function triage(i) {
+    const c = i.complaint, spo = Number(i.spo2), hr = Number(i.hr), bp = Number(i.bp), pain = Number(i.pain) || 0, age = Number(i.age), av = i.avpu || 'A';
+    const r = []; let level;
+    if (av === 'P' || av === 'U') { level = 1; r.push('responds only to pain or not at all'); }
+    else if (spo && spo < 88) { level = 1; r.push('SpO₂ below 88%'); }
+    else if (bp && bp < 80) { level = 1; r.push('systolic BP below 80'); }
+    else if (['chest', 'stroke', 'breath'].includes(c)) { level = 2; r.push('high-risk complaint'); }
+    else if ((spo && spo < 92) || hr > 120 || (hr && hr < 50) || bp > 180) { level = 2; r.push('danger-zone vital signs'); }
+    else if (pain >= 8) { level = 2; r.push('severe pain'); }
+    else if (['trauma', 'abdo'].includes(c) || (c === 'fever' && (age > 65 || age < 2))) { level = 3; r.push('needs two or more resources'); }
+    else if (c === 'fever' || c === 'minor') { level = 4; r.push('needs one resource'); }
+    else { level = 5; r.push('no resources needed'); }
+    return { level, label: ESI_LABEL[level], reasons: r };
+  }
+
+  /* Public, name-free projection for lobby screens. */
+  function board(st, now) {
+    return {
+      hospital: st.hospital.name, now,
+      rows: st.depts.filter(d => d.open).map(d => {
+        const c = st.serving[d.id] && st.visits[st.serving[d.id]], n = waiting(st, d.id)[0];
+        return { id: d.id, name: d.name, room: d.room, color: d.color, serving: c ? c.tok : null, next: n ? n.tok : null, wait: d.id === 'ER' ? null : newWait(st, d.id, now) };
+      }),
+      recall: st.recall, lastCalls: st.lastCalls.slice(0, 6), langs: st.hospital.langs
+    };
+  }
+
+  /* Compact snapshot for the AI Copilot. */
+  function snapshot(st, now) {
+    const s = stats(st, now);
+    return {
+      time: clock12(now), hospital: st.hospital.name,
+      departments: opdDepts(st).map(d => ({ id: d.id, name: d.name, doctor: d.doc, open: d.open, waiting: waiting(st, d.id).length, now_serving: st.serving[d.id] ? st.visits[st.serving[d.id]].tok : null, new_arrival_wait_min: newWait(st, d.id, now), status: slaStatus(st, newWait(st, d.id, now)) })),
+      emergency: { in_resus: st.serving.ER ? st.visits[st.serving.ER].tok : null, waiting: waiting(st, 'ER').map(v => ({ token: v.tok, esi: v.esi, waited_min: mins(v.arrived, now) })) },
+      ambulances_inbound: inboundAmbulances(st).map(a => ({ id: a.id, complaint: a.complaint, esi: a.esi, eta_min: mins(now, a.arriveAt), bay_prepared: a.prepared })),
+      beds: Object.keys(WARD_TYPES).map(w => ({ ward: st.wardNames[w], ...occupancy(st, w) })).filter(b => b.total),
+      pending_admissions: openBedReqs(st).map(r => ({ id: r.id, patient: r.name, needs: st.wardNames[r.ward], waiting_min: mins(r.at, now) })),
+      today: { patients_seen: s.served, avg_wait_min: s.avgWait, median_wait_min: s.medianWait, sla_compliance_pct: s.slaCompliance, patient_pulse: s.pulse, no_show_rate_pct: s.noShowRate },
+      forecast_next_hours: s.forecast, suggestion: suggestion(st, now)
+    };
+  }
+
+  /* ------------------------------------------------------------------ *
+   * Deltas
+   * ------------------------------------------------------------------ */
+  const LISTS = ['beds', 'bedReqs', 'ambulances', 'appts', 'feedback', 'alerts'];
+  function applyDelta(st, d) {
+    if (!d) return st;
+    if (d.meta) Object.assign(st, d.meta);
+    (d.visits || []).forEach(v => { if (v._removed) delete st.visits[v.id]; else st.visits[v.id] = v; });
+    (d.patients || []).forEach(p => { st.patients[p.pid] = p; });
+    LISTS.forEach(k => (d[k] || []).forEach(item => {
+      const i = st[k].findIndex(x => x.id === item.id);
+      if (item._removed) { if (i >= 0) st[k].splice(i, 1); } else if (i >= 0) st[k][i] = item; else st[k].unshift(item);
+    }));
+    if (d.audit && d.audit.length) st.audit = d.audit.concat(st.audit).slice(0, 200);
+    if (d.v != null) st.v = d.v;
+    return st;
+  }
+
+  /* ------------------------------------------------------------------ *
+   * Engine
+   * ------------------------------------------------------------------ */
+  function createEngine(state, opts = {}) {
+    const st = state;
+    const rng = opts.rng || Math.random;
+    const genKey = opts.genKey || (() => Math.floor(rng() * 36 ** 8).toString(36).padStart(8, '0'));
+    let dirty = freshDirty();
+    const breach = {};
+    function freshDirty() { return { meta: false, visits: new Set(), patients: new Set(), audit: [], ...Object.fromEntries(LISTS.map(k => [k, new Set()])) }; }
+    const touch = (k, id) => dirty[k].add(id);
+    const touchMeta = () => { dirty.meta = true; };
+
+    function audit(actor, action, text, now) {
+      const e = { t: now, who: actor.name || ROLES[actor.role] || 'Unknown', role: actor.role, action, text };
+      st.audit.unshift(e); if (st.audit.length > 200) st.audit.pop();
+      dirty.audit.push(e);
+    }
+    function alert(level, title, body, view, now) {
+      const a = { id: 'AL' + (st.counters.alert++), t: now, level, title, body, view, read: false };
+      st.alerts.unshift(a); if (st.alerts.length > 80) { const old = st.alerts.pop(); touch('alerts', old.id); old._removed = true; }
+      touch('alerts', a.id); touchMeta(); return a;
+    }
+    function ensureDay(now) {
+      const k = dayKey(now);
+      if (st.counters.day === k) return;
+      st.counters.day = k; st.counters.tok = {};
+      // Yesterday's unfinished visits close as no-shows and leave memory once persisted.
+      visitsList(st).forEach(v => {
+        if (v.day !== k) { if (v.status === 'waiting' || v.status === 'serving') { v.status = 'noshow'; v.outcome = v.outcome || 'Closed at day end'; } v._removed = true; touch('visits', v.id); }
+      });
+      st.serving = {}; st.lastCalls = []; st.recall = null;
+      ensureSlots(now); touchMeta();
+    }
+    function ensureSlots(now) {
+      const k = dayKey(now);
+      opdDepts(st).forEach(d => {
+        for (let m = 9 * 60; m < 13 * 60; m += 15) {
+          const id = k + '-' + d.id + '-' + pad(Math.floor(m / 60)) + pad(m % 60);
+          if (!st.appts.find(a => a.id === id)) { const a = { id, day: k, dept: d.id, t: atMinute(now, m), status: 'open', name: null, phone: null, visitId: null }; st.appts.push(a); touch('appts', a.id); }
+        }
+      });
+      // keep only today and later in memory
+      st.appts = st.appts.filter(a => a.day >= k);
+    }
+    function findOrCreatePatient(p, now) {
+      const ph = digits(p.phone), ab = digits(p.abha);
+      let pt = null;
+      if (ab.length >= 14) pt = Object.values(st.patients).find(x => digits(x.abha) === ab);
+      if (!pt && ph.length >= 10) pt = Object.values(st.patients).find(x => digits(x.phone).slice(-10) === ph.slice(-10) && x.name.toLowerCase() === p.name.toLowerCase());
+      if (!pt) { const pid = 'RC' + (++st.counters.patient); pt = { pid, name: p.name, phone: '', abha: '', age: null, sex: '', createdAt: now, visits: [] }; st.patients[pid] = pt; touchMeta(); }
+      if (p.phone) pt.phone = String(p.phone).slice(0, 20);
+      if (p.abha) pt.abha = String(p.abha).slice(0, 20);
+      if (p.age != null && p.age !== '') pt.age = p.age;
+      if (p.sex) pt.sex = p.sex;
+      touch('patients', pt.pid); return pt;
+    }
+    function freeSeat() {
+      const taken = new Set(visitsList(st).filter(v => v.status === 'waiting' && v.seat != null).map(v => v.seat));
+      const free = []; for (let i = 0; i < 120; i++) if (!taken.has(i)) free.push(i);
+      return free.length ? free[Math.floor(rng() * free.length)] : null;
+    }
+    function newVisit(d, pt, o, now) {
+      ensureDay(now);
+      st.counters.tok[d.id] = (st.counters.tok[d.id] || 100) + 1;
+      const tok = d.pre + '-' + st.counters.tok[d.id];
+      const v = {
+        id: st.counters.day + '-' + tok, day: st.counters.day, tok, dept: d.id, pid: pt.pid, name: pt.name,
+        esi: o.esi || null, pri: !!o.pri, appt: !!o.appt, lang: o.lang || 'en', src: o.src || 'Registered at desk',
+        arrived: now, status: 'waiting', start: null, end: null, outcome: null, lateOffset: 0, lateCount: 0,
+        seat: d.id === 'ER' ? null : freeSeat(), trackKey: genKey(), notified: {}, events: [{ t: now, x: o.src || 'Registered at desk' }]
+      };
+      st.visits[v.id] = v; pt.visits = (pt.visits || []).concat(v.id).slice(-50);
+      touch('visits', v.id); touch('patients', pt.pid); touchMeta();
+      return v;
+    }
+    function finish(v, outcome, now, actor) {
+      v.status = 'done'; v.end = now; v.outcome = outcome; v.events.push({ t: now, x: outcome });
+      touch('visits', v.id);
+      if (outcome === 'Admit' || (v.dept === 'ER' && v.esi && v.esi <= 2)) requestBed(v, now, actor);
+    }
+    function serve(id, specific, outcome, now, actor) {
+      const d = dept(st, id);
+      const curId = st.serving[id], cur = curId && st.visits[curId];
+      if (cur && cur.status === 'serving') finish(cur, outcome || 'Consult complete', now, actor);
+      const nx = specific || waiting(st, id)[0];
+      if (nx) {
+        nx.status = 'serving'; nx.start = now; nx.seat = null; nx.events.push({ t: now, x: 'Called to ' + d.room });
+        st.serving[id] = nx.id; touch('visits', nx.id);
+        st.lastCalls.unshift({ tok: nx.tok, room: d.room, dept: id, t: now, lang: nx.lang }); st.lastCalls = st.lastCalls.slice(0, 8);
+      } else st.serving[id] = null;
+      touchMeta();
+      return nx || null;
+    }
+    function requestBed(v, now) {
+      if (st.bedReqs.find(r => r.visitId === v.id && r.status === 'open')) return;
+      const pt = st.patients[v.pid];
+      const ward = v.esi === 1 ? 'ICU' : ((pt && pt.age != null && pt.age < 14) || v.dept === 'PED') ? 'PW' : 'GW';
+      const r = { id: 'BR-' + (st.counters.req++), visitId: v.id, tok: v.tok, pid: v.pid, name: v.name, ward, from: dept(st, v.dept).name, esi: v.esi, at: now, status: 'open', bed: null };
+      st.bedReqs.unshift(r); touch('bedReqs', r.id); touchMeta();
+      alert('warn', 'Bed requested', `${v.name} (${v.tok}) needs a ${st.wardNames[ward]} bed.`, 'beds', now);
+    }
+    function visitOr404(id) { const v = st.visits[id]; if (!v) fail('not_found', 'Visit not found'); return v; }
+    function deptOr404(id) { const d = dept(st, id); if (!d) fail('not_found', 'Department not found'); return d; }
+    const langOk = l => (st.hospital.langs.includes(l) ? l : 'en');
+
+    const handlers = {
+      registerPatient(p, actor, now) {
+        const name = str(p.name, 'Name', { required: true, max: 80 });
+        const d = deptOr404(p.dept);
+        if (d.id === 'ER') fail('invalid', 'Use triage for emergency patients');
+        if (!d.open) fail('closed', `${d.name} is closed right now`);
+        const pt = findOrCreatePatient({ name, phone: str(p.phone, 'Phone', { max: 20 }), abha: str(p.abha, 'ABHA', { max: 20 }), age: p.age === '' || p.age == null ? null : num(p.age, 'Age', { min: 0, max: 125 }), sex: str(p.sex, 'Sex', { max: 10 }) }, now);
+        if (visitsList(st).some(v => v.pid === pt.pid && v.dept === d.id && (v.status === 'waiting' || v.status === 'serving'))) fail('duplicate', `${name} is already in the ${d.name} queue`);
+        const v = newVisit(d, pt, { pri: !!p.priority, appt: !!p.appt, lang: langOk(p.lang), src: str(p.source, 'Source', { max: 60 }) || 'Registered at desk' }, now);
+        const e = eta(st, v.id, now);
+        audit(actor, 'registerPatient', `Registered ${name} as ${v.tok} in ${d.name}`, now);
+        return { id: v.id, tok: v.tok, trackKey: v.trackKey, position: e.pos, etaMin: e.mins, room: d.room };
+      },
+      callNext(p, actor, now) {
+        const d = deptOr404(p.dept);
+        const v = serve(d.id, null, p.outcome, now, actor);
+        audit(actor, 'callNext', v ? `Called ${v.tok} to ${d.room}` : `Called next in ${d.name}: queue empty`, now);
+        return { called: v ? v.tok : null, id: v ? v.id : null, room: d.room };
+      },
+      callVisit(p, actor, now) {
+        const v = visitOr404(p.id);
+        if (v.status !== 'waiting') fail('invalid', `${v.tok} is not waiting`);
+        serve(v.dept, v, null, now, actor);
+        audit(actor, 'callVisit', `Called ${v.tok} out of order`, now);
+        return { called: v.tok };
+      },
+      completeVisit(p, actor, now) {
+        const d = deptOr404(p.dept);
+        const cur = st.serving[d.id] && st.visits[st.serving[d.id]];
+        if (!cur || cur.status !== 'serving') fail('invalid', 'No patient in consult');
+        let outcome = p.outcome;
+        let referred = null;
+        if (p.referTo) {
+          const to = deptOr404(p.referTo); if (to.id === 'ER' || to.id === d.id) fail('invalid', 'Choose another OPD department');
+          outcome = 'Referred to ' + to.name;
+          const pt = st.patients[cur.pid];
+          referred = newVisit(to, pt, { pri: true, lang: cur.lang, src: 'Referred from ' + d.name }, now);
+        } else if (!OUTCOMES.includes(outcome) && outcome !== 'Consult complete') fail('invalid', 'Unknown outcome');
+        finish(cur, outcome, now, actor); st.serving[d.id] = null; touchMeta();
+        audit(actor, 'completeVisit', `${cur.tok}: ${outcome}${referred ? ' as ' + referred.tok : ''}`, now);
+        let next = null;
+        if (p.callNext) { next = serve(d.id, null, null, now, actor); if (next) audit(actor, 'callNext', `Called ${next.tok} to ${d.room}`, now); }
+        return { completed: cur.tok, outcome, referred: referred && referred.tok, next: next && next.tok };
+      },
+      markNoShow(p, actor, now) {
+        const v = visitOr404(p.id);
+        if (v.status !== 'waiting') fail('invalid', `${v.tok} is not waiting`);
+        v.status = 'noshow'; v.outcome = 'No-show'; v.end = now; v.seat = null; v.events.push({ t: now, x: 'Marked no-show' });
+        touch('visits', v.id); audit(actor, 'markNoShow', `Marked ${v.tok} as no-show`, now);
+        return { tok: v.tok };
+      },
+      recall(p, actor, now) {
+        const d = deptOr404(p.dept);
+        const v = st.serving[d.id] && st.visits[st.serving[d.id]];
+        if (!v) fail('invalid', 'No one to recall');
+        st.recall = { dept: d.id, tok: v.tok, room: d.room, lang: v.lang, t: now }; touchMeta();
+        audit(actor, 'recall', `Recalled ${v.tok} to ${d.room}`, now);
+        return { tok: v.tok };
+      },
+      runningLate(p, actor, now) {
+        const v = visitOr404(p.id);
+        if (v.status !== 'waiting') fail('invalid', 'Only waiting patients can use this');
+        if (v.lateCount >= MAX_LATE) fail('limit', 'Running late can be used twice per visit');
+        const list = waiting(st, v.dept), i = list.indexOf(v), target = list[Math.min(list.length - 1, i + 3)];
+        if (target && target !== v) v.lateOffset = (target.arrived + (target.lateOffset || 0)) - v.arrived + 1000;
+        v.lateCount++; v.events.push({ t: now, x: 'Running late: moved back 3 places' }); touch('visits', v.id);
+        audit(actor, 'runningLate', `${v.tok} is running late`, now);
+        return eta(st, v.id, now);
+      },
+      triage(p, actor, now) {
+        const name = str(p.name, 'Name', { max: 80 }) || 'Unknown patient';
+        if (p.complaint && !COMPLAINTS[p.complaint]) fail('invalid', 'Unknown complaint');
+        const t = triage(p);
+        const pt = findOrCreatePatient({ name, age: p.age === '' || p.age == null ? null : num(p.age, 'Age', { min: 0, max: 125 }), sex: str(p.sex, 'Sex', { max: 10 }) }, now);
+        const v = newVisit(dept(st, 'ER'), pt, { esi: t.level, lang: langOk(p.lang), src: p.source || `Triaged ESI ${t.level} (${COMPLAINTS[p.complaint] || 'unspecified'})` }, now);
+        v.triage = { complaint: p.complaint || null, spo2: p.spo2 || null, hr: p.hr || null, bp: p.bp || null, avpu: p.avpu || 'A', pain: p.pain || 0, reasons: t.reasons };
+        if (t.level <= 2) alert('crit', `ESI ${t.level} in Emergency`, `${v.tok} ${name}: ${t.reasons.join(', ')}.`, 'er', now);
+        audit(actor, 'triage', `Triaged ${v.tok} at ESI ${t.level}`, now);
+        return { id: v.id, tok: v.tok, level: t.level, reasons: t.reasons };
+      },
+      overrideEsi(p, actor, now) {
+        const v = visitOr404(p.id); if (v.dept !== 'ER') fail('invalid', 'Only emergency visits have ESI');
+        const esi = num(p.esi, 'ESI', { min: 1, max: 5 }); const reason = str(p.reason, 'Reason', { required: true, max: 200 });
+        const old = v.esi; v.esi = esi; v.events.push({ t: now, x: `ESI changed ${old} → ${esi}: ${reason}` }); touch('visits', v.id);
+        audit(actor, 'overrideEsi', `${v.tok} ESI ${old} → ${esi} (${reason})`, now);
+        return { tok: v.tok, esi };
+      },
+      ambulancePreAlert(p, actor, now) {
+        const a = { id: 'AMB-' + (st.counters.amb++), from: str(p.from, 'From', { required: true, max: 60 }), complaint: str(p.complaint, 'Complaint', { required: true, max: 120 }), esi: num(p.esi, 'ESI', { min: 1, max: 5 }), arriveAt: now + num(p.etaMin, 'ETA', { min: 1, max: 240 }) * MIN, prepared: false, status: 'inbound', at: now };
+        st.ambulances.unshift(a); touch('ambulances', a.id); touchMeta();
+        alert('crit', 'Ambulance inbound', `${a.id}: ${a.complaint}. ETA ${mins(now, a.arriveAt)} min.`, 'er', now);
+        audit(actor, 'ambulancePreAlert', `${a.id} pre-alert from ${a.from}`, now);
+        return { id: a.id };
+      },
+      prepareBay(p, actor, now) {
+        const a = st.ambulances.find(x => x.id === p.id && x.status === 'inbound'); if (!a) fail('not_found', 'Ambulance not found');
+        a.prepared = true; touch('ambulances', a.id); audit(actor, 'prepareBay', `Resus bay prepared for ${a.id}`, now);
+        return { id: a.id };
+      },
+      assignBed(p, actor, now) {
+        const r = p.reqId ? st.bedReqs.find(x => x.id === p.reqId && x.status === 'open') : openBedReqs(st).slice(-1)[0];
+        if (!r) fail('not_found', 'No pending admission');
+        let b;
+        if (p.bedId) { b = st.beds.find(x => x.id === p.bedId); if (!b || b.status !== 'free') fail('invalid', 'That bed is not free'); }
+        else b = st.beds.find(x => x.ward === r.ward && x.status === 'free') || st.beds.find(x => x.ward === 'GW' && x.status === 'free');
+        if (!b) fail('no_bed', `No free ${st.wardNames[r.ward]} bed`);
+        b.status = 'occupied'; b.pid = r.pid; b.name = r.name; b.since = now; touch('beds', b.id);
+        r.status = 'assigned'; r.bed = b.id; touch('bedReqs', r.id);
+        const v = st.visits[r.visitId]; if (v) { v.events.push({ t: now, x: `Admitted to ${b.id}, ${st.wardNames[b.ward]}` }); touch('visits', v.id); }
+        audit(actor, 'assignBed', `Assigned ${b.id} to ${r.name}`, now);
+        return { bed: b.id, ward: st.wardNames[b.ward], patient: r.name };
+      },
+      dischargeBed(p, actor, now) {
+        const b = st.beds.find(x => x.id === p.bedId); if (!b || b.status !== 'occupied') fail('invalid', 'Bed is not occupied');
+        const who = b.name; b.status = 'cleaning'; b.since = now; b.name = null; b.pid = null; touch('beds', b.id);
+        audit(actor, 'dischargeBed', `Discharged ${who || 'patient'} from ${b.id}`, now);
+        return { bed: b.id };
+      },
+      markBedReady(p, actor, now) {
+        const b = st.beds.find(x => x.id === p.bedId); if (!b || b.status !== 'cleaning') fail('invalid', 'Bed is not being cleaned');
+        b.status = 'free'; b.since = now; touch('beds', b.id); audit(actor, 'markBedReady', `${b.id} cleaned and ready`, now);
+        return { bed: b.id };
+      },
+      bookAppointment(p, actor, now) {
+        const a = st.appts.find(x => x.id === p.slotId); if (!a) fail('not_found', 'Slot not found');
+        if (a.status !== 'open') fail('invalid', 'Slot is already taken');
+        if (a.t + 15 * MIN < now) fail('invalid', 'Slot is in the past');
+        a.name = str(p.name, 'Name', { required: true, max: 80 }); a.phone = str(p.phone, 'Phone', { max: 20 }); a.status = 'booked'; touch('appts', a.id);
+        audit(actor, 'bookAppointment', `Booked ${a.name} with ${dept(st, a.dept).doc} at ${hhmm(a.t)}`, now);
+        return { slotId: a.id };
+      },
+      checkInAppointment(p, actor, now) {
+        const a = st.appts.find(x => x.id === p.slotId); if (!a || a.status !== 'booked') fail('invalid', 'Appointment is not booked');
+        const r = handlers.registerPatient({ name: a.name, phone: a.phone, dept: a.dept, appt: true, source: 'Checked in for ' + hhmm(a.t) + ' appointment' }, actor, now);
+        a.status = 'checked'; a.visitId = r.id; touch('appts', a.id);
+        return r;
+      },
+      submitFeedback(p, actor, now) {
+        const v = visitOr404(p.id); if (v.status !== 'done') fail('invalid', 'Feedback opens after the visit');
+        const stars = num(p.stars, 'Stars', { min: 1, max: 5 });
+        let f = st.feedback.find(x => x.visitId === v.id);
+        if (f) { f.stars = stars; f.text = str(p.text, 'Comment', { max: 300 }) || f.text; }
+        else { f = { id: 'FB' + (st.counters.fb++), visitId: v.id, tok: v.tok, dept: v.dept, stars, text: str(p.text, 'Comment', { max: 300 }), t: now }; st.feedback.unshift(f); if (st.feedback.length > 500) st.feedback.pop(); touchMeta(); }
+        touch('feedback', f.id);
+        return { stars };
+      },
+      updateSettings(p, actor, now) {
+        const h = st.hospital;
+        if (p.name != null) h.name = str(p.name, 'Hospital name', { required: true, max: 80 });
+        if (p.city != null) h.city = str(p.city, 'City', { max: 60 });
+        if (p.sla) { const busy = num(p.sla.busy, 'Busy threshold', { min: 5, max: 120 }), over = num(p.sla.over, 'SLA threshold', { min: 10, max: 240 }); if (over <= busy) fail('invalid', 'SLA threshold must be above the busy threshold'); h.sla = { busy, over }; }
+        if (p.langs) { const l = p.langs.filter(x => LANGS[x]); if (!l.includes('en')) l.unshift('en'); h.langs = l; }
+        if (p.publicCheckin != null) h.publicCheckin = !!p.publicCheckin;
+        touchMeta(); audit(actor, 'updateSettings', 'Updated hospital settings', now);
+        return { hospital: h };
+      },
+      updateDepartment(p, actor, now) {
+        const d = deptOr404(p.id);
+        if (p.avg != null) d.avg = num(p.avg, 'Average consult', { min: 2, max: 60 });
+        if (p.open != null) { if (d.id === 'ER' && !p.open) fail('invalid', 'Emergency cannot be closed'); d.open = !!p.open; }
+        if (p.doc != null) d.doc = str(p.doc, 'Doctor', { required: true, max: 60 });
+        if (p.room != null) d.room = str(p.room, 'Room', { required: true, max: 30 });
+        touchMeta(); audit(actor, 'updateDepartment', `Updated ${d.name}`, now);
+        return { dept: d };
+      },
+      addDepartment(p, actor, now) {
+        const id = str(p.id, 'Code', { required: true, max: 4 }).toUpperCase();
+        if (dept(st, id)) fail('duplicate', 'Department already exists');
+        const t = TEMPLATES[id] || {};
+        const name = str(p.name || t.name, 'Name', { required: true, max: 60 });
+        const used = new Set(st.depts.map(d => d.pre));
+        let pre = (p.pre || t.pre || name[0]).toUpperCase(); if (used.has(pre)) pre = 'ABCDFHJKLMQRSVXZ'.split('').find(c => !used.has(c));
+        const d = { id, name, pre, avg: num(p.avg || t.avg || 8, 'Average consult', { min: 2, max: 60 }), color: t.color || '#64748B', room: str(p.room, 'Room', { required: true, max: 30 }), doc: str(p.doc, 'Doctor', { required: true, max: 60 }), floor: str(p.floor, 'Directions', { max: 80 }) || 'Ground floor', open: true, rooms: 1 };
+        st.depts.splice(st.depts.length - 1, 0, d); ensureSlots(now); touchMeta();
+        audit(actor, 'addDepartment', `Added ${name}`, now);
+        return { dept: d };
+      },
+      codeBlue(p, actor, now) {
+        st.codeBlue = { location: str(p.location, 'Location', { max: 60 }) || 'Emergency', t: now, by: actor.name }; touchMeta();
+        alert('crit', 'Code Blue', `Code Blue at ${st.codeBlue.location}.`, 'er', now);
+        audit(actor, 'codeBlue', `Code Blue called at ${st.codeBlue.location}`, now);
+        return st.codeBlue;
+      },
+      clearCodeBlue(p, actor, now) {
+        if (!st.codeBlue) return { cleared: false };
+        st.codeBlue = null; touchMeta(); audit(actor, 'clearCodeBlue', 'Code Blue cleared', now);
+        return { cleared: true };
+      },
+      ackAlerts(p) {
+        st.alerts.forEach(a => { if (!a.read && (!p.id || a.id === p.id)) { a.read = true; touch('alerts', a.id); } });
+        return { ok: true };
+      },
+      markNotified(p) {
+        const v = visitOr404(p.id); v.notified = { ...(v.notified || {}), [p.kind]: true }; touch('visits', v.id); return { ok: true };
+      }
+    };
+
+    function dispatch(name, payload, actor, now) {
+      const h = handlers[name];
+      if (!h || !COMMANDS[name]) fail('unknown_command', `Unknown command: ${name}`);
+      actor = actor || { role: 'system', name: 'System' };
+      if (!COMMANDS[name].includes(actor.role)) fail('forbidden', `${ROLES[actor.role] || actor.role} cannot ${name}`);
+      if (typeof now !== 'number') now = Date.now();
+      ensureDay(now);
+      return h(payload || {}, actor, now);
+    }
+
+    /* Time-based maintenance. Call every few seconds. */
+    function tick(now) {
+      ensureDay(now);
+      const sys = { role: 'system', name: 'System' };
+      inboundAmbulances(st).filter(a => a.arriveAt <= now).forEach(a => {
+        a.status = 'arrived'; touch('ambulances', a.id);
+        const pt = findOrCreatePatient({ name: 'Unknown (' + a.id + ')' }, now);
+        const v = newVisit(dept(st, 'ER'), pt, { esi: a.esi, src: 'Arrived by ' + a.id + ' from ' + a.from }, now);
+        alert('crit', `${a.id} arrived`, `${v.tok} placed at ESI ${a.esi}.`, 'er', now);
+        audit(sys, 'ambulanceArrived', `${a.id} arrived as ${v.tok}`, now);
+      });
+      st.beds.forEach(b => { if (b.status === 'cleaning' && now - b.since >= CLEANING_MIN * MIN) { b.status = 'free'; b.since = now; touch('beds', b.id); } });
+      st.appts.forEach(a => { if (a.status === 'booked' && now > a.t + 20 * MIN) { a.status = 'noshow'; touch('appts', a.id); } });
+      opdDepts(st).forEach(d => {
+        if (!d.open) return;
+        const w = newWait(st, d.id, now);
+        if (w > st.hospital.sla.over && !breach[d.id]) { breach[d.id] = true; alert('warn', `${d.name} over SLA`, `New arrivals now wait about ${w} min. Consider opening a second room.`, 'overview', now); }
+        else if (w < st.hospital.sla.busy) breach[d.id] = false;
+      });
+      if (st.recall && now - st.recall.t > 2 * MIN) { st.recall = null; touchMeta(); }
+      return hasChanges();
+    }
+
+    function hasChanges() { return dirty.meta || dirty.audit.length || dirty.visits.size || dirty.patients.size || LISTS.some(k => dirty[k].size); }
+    function takeDelta(now) {
+      if (!hasChanges()) return null;
+      st.v++;
+      const d = { v: st.v, now };
+      if (dirty.meta) d.meta = { hospital: st.hospital, depts: st.depts, counters: st.counters, serving: st.serving, recall: st.recall, codeBlue: st.codeBlue, lastCalls: st.lastCalls, wardNames: st.wardNames };
+      if (dirty.visits.size) d.visits = [...dirty.visits].map(id => st.visits[id] || { id, _removed: true });
+      [...dirty.visits].forEach(id => { const v = st.visits[id]; if (v && v._removed) delete st.visits[id]; });
+      if (dirty.patients.size) d.patients = [...dirty.patients].map(id => st.patients[id]).filter(Boolean);
+      LISTS.forEach(k => { if (dirty[k].size) d[k] = [...dirty[k]].map(id => st[k].find(x => x.id === id) || { id, _removed: true }); });
+      if (dirty.audit.length) d.audit = dirty.audit.slice();
+      dirty = freshDirty();
+      return d;
+    }
+
+    return { state: st, dispatch, tick, takeDelta, hasChanges, ensureSlots: now => ensureSlots(now) };
+  }
+
+  function can(role, command) { return !!(COMMANDS[command] && COMMANDS[command].includes(role)); }
+
+  return {
+    VERSION, MIN, TEMPLATES, ER, WARD_TYPES, LANGS, OUTCOMES, ESI_LABEL, COMPLAINTS, COMMANDS, ROLES, PROFILE,
+    EngineError, createState, createEngine, applyDelta, can,
+    dept, opdDepts, waiting, pace, remaining, newWait, eta, slaStatus, occupancy, openBedReqs, inboundAmbulances,
+    todayVisits, stats, suggestion, triage, board, snapshot, sortKey,
+    dayKey, startOfDay, atMinute, hourOf, mins, hhmm, clock12, maskPhone, median
+  };
+});
+
+</script>
+<script>
+/*!
+ * RayCare demo simulator — generates a realistic hospital day on top of the
+ * engine. Used by the offline browser demo and by `npm run demo`.
+ * It only ever talks to the engine through `dispatch`, exactly like staff do.
+ */
+(function (root, factory) {
+  if (typeof module === 'object' && module.exports) module.exports = factory(require('./engine.js'));
+  else root.RayCareSimulator = factory(root.RayCareEngine);
+})(typeof globalThis !== 'undefined' ? globalThis : this, function (E) {
+  'use strict';
+  const MIN = E.MIN;
+  const FIRST = ['Lakshmi', 'Arjun', 'Fatima', 'Ravi', 'Sneha', 'Imran', 'Priya', 'Vikram', 'Anjali', 'Kiran', 'Meena', 'Suresh', 'Ayesha', 'Rahul', 'Divya', 'Mohan', 'Nazia', 'Harish', 'Swathi', 'Gopal', 'Zoya', 'Venkat', 'Pooja', 'Abdul', 'Keerthi', 'Naveen', 'Rekha', 'Salim', 'Bhavya', 'Tarun', 'Hema', 'Faisal'];
+  const LAST = ['Kumar', 'Reddy', 'Shaik', 'Rao', 'Naidu', 'Khan', 'Sharma', 'Varma', 'Iyer', 'Gupta', 'Patel', 'Das', 'Menon', 'Pillai', 'Joshi', 'Ali'];
+  const COMMENTS = {
+    5: ['Knew exactly when to walk in. No crowding.', 'The SMS in Telugu helped my mother a lot.', 'Waited in the canteen and came back on time.', 'Very smooth visit.'],
+    4: ['Clear directions to the room.', 'Estimate was close. Good system.', 'Registration was quick.'],
+    3: ['Estimate was a bit off but okay.', 'Consult took longer than shown.'],
+    2: ['Waited longer than the estimate.', 'Too crowded near the cardiology room.'],
+    1: ['Called while I was at the pharmacy.']
+  };
+
+  const DEMO_CONFIG = {
+    hospital: { name: 'Sunrise Multispeciality', city: 'Hyderabad', langs: ['en', 'hi', 'te'], setupComplete: true },
+    depts: [
+      { id: 'GEN', room: 'OPD 1', doc: 'Dr. Pranav Reddy', floor: 'Ground floor, left of registration' },
+      { id: 'PED', room: 'OPD 3', doc: 'Dr. Farah Khan', floor: 'Ground floor, follow the purple line' },
+      { id: 'CAR', room: 'OPD 4', doc: 'Dr. Anil Rao', floor: 'Ground floor, follow the pink line' },
+      { id: 'DER', room: 'OPD 5', doc: 'Dr. Kavya Iyer', floor: 'Ground floor, next to the lab' },
+      { id: 'ORT', room: 'OPD 6', doc: 'Dr. Sunil Menon', floor: 'Ground floor, end of the corridor' }
+    ],
+    wards: [{ id: 'ICU', count: 8 }, { id: 'GW', count: 16 }, { id: 'PW', count: 10 }]
+  };
+
+  function createSimulator(engine, rng) {
+    rng = rng || Math.random;
+    const st = engine.state;
+    const pick = a => a[Math.floor(rng() * a.length)];
+    const name = () => pick(FIRST) + ' ' + pick(LAST);
+    const phone = () => '9' + String(Math.floor(rng() * 1e9)).padStart(9, '0');
+    const desk = { role: 'desk', name: 'Salma (Front desk)' };
+    const nurse = { role: 'nurse', name: 'Joseph (ER nurse)' };
+    const dur = {};
+    const manual = new Set(); // rooms a human is driving in the demo
+    const run = (cmd, p, actor, now) => { try { return engine.dispatch(cmd, p, actor, now); } catch (e) { return null; } };
+
+    function step(now) {
+      // Doctors finish and call.
+      st.depts.forEach(d => {
+        if (!d.open || manual.has(d.id)) return;
+        const doc = { role: 'doctor', name: d.doc };
+        const curId = st.serving[d.id], cur = curId && st.visits[curId];
+        if (cur && cur.status === 'serving') {
+          if (!dur[cur.id]) dur[cur.id] = E.pace(st, d.id, now) * (0.6 + rng() * 0.8);
+          if (now - cur.start >= dur[cur.id] * MIN) {
+            const outcome = d.id === 'ER' ? pick(['Discharged home', 'Admit', 'Imaging ordered', 'Discharged home']) : pick(['Prescription issued', 'Prescription issued', 'Lab tests ordered', 'Follow-up in 2 weeks', 'Imaging ordered', 'Discharged home', rng() < 0.08 ? 'Admit' : 'Prescription issued']);
+            run('completeVisit', { dept: d.id, outcome, callNext: true }, d.id === 'ER' ? { role: 'doctor', name: 'ER team' } : doc, now);
+            if (d.id !== 'ER' && rng() < 0.55) {
+              const w = (cur.start - cur.arrived) / MIN;
+              const stars = w < 20 ? pick([5, 5, 5, 4]) : w < 40 ? pick([4, 4, 5, 3]) : pick([3, 2, 4, 3]);
+              run('submitFeedback', { id: cur.id, stars, text: pick(COMMENTS[stars]) }, { role: 'patient', name: 'Patient' }, now);
+            }
+          }
+        } else if (E.waiting(st, d.id).length) run('callNext', { dept: d.id }, d.id === 'ER' ? nurse : doc, now);
+      });
+      // Walk-ins.
+      const hr = new Date(now).getHours();
+      const busy = (E.PROFILE[hr] || 0.2);
+      if (rng() < 0.6 * busy + 0.03) {
+        const W = { GEN: 2.3, PED: 1.9, CAR: 0.6, DER: 1.1, ORT: 1.3 };
+        const weights = E.opdDepts(st).filter(d => d.open).map(d => [d.id, W[d.id] || 1.2]);
+        const tot = weights.reduce((a, b) => a + b[1], 0); let r = rng() * tot, id = weights[0] && weights[0][0];
+        for (const [k, w] of weights) { if ((r -= w) <= 0) { id = k; break; } }
+        if (id && E.waiting(st, id).length < 14) run('registerPatient', { name: name(), phone: phone(), age: 2 + Math.floor(rng() * 75), sex: pick(['F', 'M']), dept: id, lang: pick(['en', 'en', 'hi', 'te']), priority: rng() < 0.1, source: pick(['Checked in by QR', 'Checked in at kiosk', 'Registered at desk']) }, desk, now);
+      }
+      // Emergency walk-ins and ambulances.
+      if (rng() < 0.05 && E.waiting(st, 'ER').length < 5) {
+        const c = pick(['fever', 'minor', 'abdo', 'trauma', 'chest', 'rx', 'fever']);
+        run('triage', { name: name(), age: 5 + Math.floor(rng() * 70), complaint: c, spo2: 90 + Math.floor(rng() * 10), hr: 70 + Math.floor(rng() * 55), bp: 100 + Math.floor(rng() * 70), avpu: 'A', pain: Math.floor(rng() * 9) }, nurse, now);
+      }
+      if (rng() < 0.03 && E.inboundAmbulances(st).length < 2) {
+        const c = pick([['Road traffic accident, 2 injured', 2], ['Chest pain, 64 M', 2], ['Unconscious, 51 F', 1], ['Fall from height, 30 M', 2], ['Breathing difficulty, 7 F', 2], ['Burns, 40 M', 2]]);
+        run('ambulancePreAlert', { from: pick(['108 · Gachibowli', '108 · Kukatpally', 'Private · Madhapur', '108 · LB Nagar']), complaint: c[0], esi: c[1], etaMin: 6 + Math.floor(rng() * 10) }, { role: 'system', name: '108 dispatch' }, now);
+      }
+      // Appointments arriving near their slot.
+      st.appts.forEach(a => { if (a.status === 'booked' && now >= a.t - 10 * MIN && now <= a.t + 10 * MIN && rng() < 0.35) run('checkInAppointment', { slotId: a.id }, desk, now); });
+      // Wards.
+      if (rng() < 0.2 && E.openBedReqs(st).length) run('assignBed', {}, nurse, now);
+      if (rng() < 0.03) { const b = st.beds.filter(x => x.status === 'occupied'); if (b.length) run('dischargeBed', { bedId: pick(b).id }, nurse, now); }
+      engine.tick(now);
+    }
+
+    /* Fill the day so far so the demo opens mid-shift. */
+    function fastForward(from, to) {
+      for (let t = from; t <= to; t += 2 * MIN) step(t);
+    }
+    return { step, fastForward, manual };
+  }
+
+  /* Build a ready-to-run demo hospital at `now`. */
+  function createDemo(now, rng) {
+    rng = rng || Math.random;
+    const state = E.createState(DEMO_CONFIG);
+    state.hospital.createdAt = now;
+    const engine = E.createEngine(state, { rng });
+    engine.ensureSlots(now);
+    const pick = a => a[Math.floor(rng() * a.length)];
+    // Wards start mostly full, as they would mid-morning.
+    state.beds.forEach(b => {
+      const r = rng();
+      if (r < 0.72) { b.status = 'occupied'; b.name = pick(FIRST) + ' ' + pick(LAST); b.since = now - Math.floor(rng() * 72) * 60 * MIN; }
+      else if (r < 0.8) { b.status = 'cleaning'; b.since = now - Math.floor(rng() * 15) * MIN; }
+    });
+    // About 60% of appointment slots are booked in advance.
+    const desk = { role: 'desk', name: 'Online booking' };
+    const early = E.atMinute(now, 7 * 60);
+    state.appts.forEach(a => { if (rng() < 0.6) { try { engine.dispatch('bookAppointment', { slotId: a.id, name: pick(FIRST) + ' ' + pick(LAST), phone: '9' + String(Math.floor(rng() * 1e9)).padStart(9, '0') }, desk, early); } catch (e) { /* ignore */ } } });
+    const sim = createSimulator(engine, rng);
+    const start = E.atMinute(now, 8 * 60);
+    if (now > start) sim.fastForward(start, now);
+    // Keep the history but start the demo with a clean alert tray.
+    state.alerts.forEach((a, i) => { if (i > 4) a.read = true; });
+    engine.takeDelta(now);
+    return { state, engine, sim };
+  }
+
+  return { createSimulator, createDemo, DEMO_CONFIG };
+});
+
+</script>
+<script>
+(function () {
+  'use strict';
+  const $ = s => document.querySelector(s), $$ = s => [...document.querySelectorAll(s)];
+  const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+  /* Role tabs */
+  $$('.jtab').forEach(b => b.addEventListener('click', () => { $$('.jtab').forEach(x => x.setAttribute('aria-selected', String(x === b))); $$('.jpanel').forEach(p => { p.hidden = p.dataset.p !== b.dataset.j; }); }));
+  /* Install tabs */
+  $$('.term-tab').forEach(b => b.addEventListener('click', () => { $$('.term-tab').forEach(x => x.setAttribute('aria-selected', String(x === b))); $$('.term pre').forEach(p => { p.hidden = p.dataset.tp !== b.dataset.t; }); }));
+  $('#copyCmd').addEventListener('click', ev => {
+    const pre = $$('.term pre').find(p => !p.hidden);
+    const txt = pre.textContent.split('\n').filter(l => /^\s*[$>]/.test(l)).map(l => l.replace(/^\s*[$>]\s?/, '').replace(/\s+#.*$/, '')).join('\n');
+    const b = ev.currentTarget;
+    const sel = () => { const r = document.createRange(); r.selectNodeContents(pre); const s = getSelection(); s.removeAllRanges(); s.addRange(r); b.textContent = 'Selected, press Ctrl+C'; };
+    try { navigator.clipboard.writeText(txt).then(() => { b.textContent = 'Copied'; setTimeout(() => { b.textContent = 'Copy commands'; }, 1600); }, sel); } catch (e) { sel(); }
+  });
+
+  /* ROI */
+  function roi() {
+    const v = +$('#rV').value, w = +$('#rW').value, d = +$('#rD').value;
+    $('#oV').textContent = v.toLocaleString('en-IN'); $('#oW').textContent = w + ' min'; $('#oD').textContent = d;
+    $('#xH').textContent = Math.round(v * 30 * w * .35 / 60).toLocaleString('en-IN');
+    $('#xW').textContent = Math.round(w * .65) + ' min';
+    $('#xS').textContent = Math.round(Math.min(v * .25 * 30 * 1.5 / 60, d * 26 * 8 * .5)).toLocaleString('en-IN') + ' hrs';
+  }
+  ['#rV', '#rW', '#rD'].forEach(s => $(s).addEventListener('input', roi)); roi();
+
+  /* Pricing */
+  $('#annual').addEventListener('change', e => $$('.price[data-m]').forEach(p => { const m = +p.dataset.m, v = e.target.checked ? Math.round(m * .85) : m; p.innerHTML = '₹' + v.toLocaleString('en-IN') + '<small> /month' + (e.target.checked ? ', billed yearly' : '') + '</small>'; }));
+
+  /* Pilot form */
+  $('#pilot').addEventListener('submit', e => {
+    e.preventDefault();
+    const txt = `Pilot request\nHospital: ${$('#fH').value}\nContact: ${$('#fN').value} (${$('#fR').value})\nPhone: ${$('#fP').value}\nCity: ${$('#fC').value || '—'}\nOPD visits/day: ${$('#fV').value}`;
+    $('#formBox').innerHTML = `<div style="display:grid;gap:12px"><h3>Your request is ready</h3><p class="hint">Copy these details and send them to the RayCare team on LinkedIn or email. We reply within one working day.</p><pre id="pTxt">${esc(txt)}</pre><div style="display:flex;gap:10px;flex-wrap:wrap"><button class="btn btn-primary btn-sm" type="button" id="pCopy">Copy details</button><a class="btn btn-ghost btn-sm" href="https://www.linkedin.com/in/rayeesa-mahmood/" target="_blank" rel="noopener">Open LinkedIn</a></div></div>`;
+    $('#pCopy').addEventListener('click', ev => { const b = ev.currentTarget; navigator.clipboard.writeText(txt).then(() => { b.textContent = 'Copied'; }, () => { const r = document.createRange(); r.selectNodeContents($('#pTxt')); const s = getSelection(); s.removeAllRanges(); s.addRange(r); b.textContent = 'Selected, press Ctrl+C'; }); });
+  });
+
+  /* Live hero: the real engine and simulator, running in the page */
+  const E = window.RayCareEngine, Sim = window.RayCareSimulator;
+  if (!E || !Sim) return;
+  let t = E.atMinute(Date.now(), 10 * 60 + 40);
+  const d = Sim.createDemo(t), st = d.state;
+  const LANG = [['Now serving', 'var(--f-body)'], ['अब बारी है', '"Noto Sans Devanagari",system-ui'], ['ఇప్పుడు వంతు', '"Noto Sans Telugu",system-ui']];
+  let li = 0, follow = null, followStart = 0;
+  function paint() {
+    const s = E.stats(st, t), o = E.occupancy(st);
+    $('#hClock').textContent = E.clock12(t) + ' · live demo';
+    $('#hTiles').innerHTML = [['Waiting', s.waitingNow], ['Avg wait', s.avgWait + 'm'], ['Seen today', s.served], ['Beds used', Math.round(o.occupied / o.total * 100) + '%']].map(x => `<div class="tile"><span>${x[0]}</span><b>${x[1]}</b></div>`).join('');
+    const rows = E.opdDepts(st).map(dp => ({ dp, m: E.newWait(st, dp.id, t) })), max = Math.max(60, ...rows.map(r => r.m));
+    $('#hLoads').innerHTML = rows.map(({ dp, m }) => { const k = E.slaStatus(st, m); const c = k === 'over' ? 'var(--crit)' : k === 'busy' ? 'var(--warn)' : 'var(--ok)'; return `<div class="load"><span class="nm"><i class="dot" style="background:${dp.color}"></i>${esc(dp.name)}</span><span class="track"><i style="width:${Math.min(100, m / max * 100)}%;background:${c}"></i></span><span class="pill p-${k === 'over' ? 'crit' : k}">${m}m</span></div>`; }).join('');
+    const erw = E.waiting(st, 'ER'), amb = E.inboundAmbulances(st), bay = st.serving.ER && st.visits[st.serving.ER];
+    $('#hEr').innerHTML = `<b>Emergency</b>${bay ? `<span>Resus bay <b class="mono">${bay.tok}</b></span>` : ''}${erw.map(v => `<span class="esi" style="background:${['', '#D92D20', '#E8641A', '#C98A04', '#15803D', '#2563EB'][v.esi || 4]}">ESI ${v.esi || 4}</span>`).join('')}<span>${amb.length ? amb.map(a => a.id + ' in ' + Math.max(0, Math.round((a.arriveAt - t) / E.MIN)) + ' min').join(' · ') : 'No ambulances inbound'}</span>`;
+    const c = st.lastCalls[0]; if (c) { $('#hTok').textContent = c.tok; $('#hRoom').textContent = '→ ' + c.room; }
+    if (!follow || !st.visits[follow] || st.visits[follow].status !== 'waiting') { const w = E.waiting(st, 'CAR'); const v = w[w.length - 1] || Object.values(st.visits).find(x => x.status === 'waiting' && x.dept !== 'ER'); follow = v && v.id; followStart = v ? E.eta(st, v.id, t).pos : 0; }
+    if (follow) { const v = st.visits[follow], e = E.eta(st, follow, t), dp = E.dept(st, v.dept); $('#hPTok').textContent = v.tok; $('#hPos').textContent = e.pos; $('#hEta').textContent = e.mins + 'm'; const pct = Math.max(.06, 1 - (e.pos - 1) / Math.max(followStart, 1)); $('#hRing').setAttribute('stroke-dashoffset', String(308 * (1 - pct))); $('#hRing').setAttribute('stroke', dp.color); }
+    drawTwin();
+  }
+  function drawTwin() {
+    const deps = E.opdDepts(st), n = deps.length, rw = (600 - (n - 1) * 10) / n; let s = '';
+    deps.forEach((dp, i) => { const x = 20 + i * (rw + 10), m = E.newWait(st, dp.id, t), k = E.slaStatus(st, m), c = k === 'over' ? 'var(--crit)' : k === 'busy' ? 'var(--warn)' : 'var(--ok)', cur = st.serving[dp.id] && st.visits[st.serving[dp.id]];
+      s += `<rect x="${x}" y="10" width="${rw}" height="78" rx="10" fill="var(--paper)" stroke="${c}" stroke-width="2"/><rect x="${x}" y="10" width="${rw}" height="6" rx="3" fill="${dp.color}"/><text x="${x + 10}" y="36" font-size="11" font-weight="700" fill="var(--ink)" font-family="Figtree,sans-serif">${esc(dp.room)}</text><text x="${x + 10}" y="62" font-size="16" font-weight="700" fill="${dp.color}" font-family="JetBrains Mono,monospace">${cur ? cur.tok : '—'}</text><text x="${x + 10}" y="80" font-size="10" fill="var(--muted)" font-family="Figtree,sans-serif">${E.waiting(st, dp.id).length} waiting</text>`; });
+    s += `<rect x="20" y="102" width="600" height="138" rx="12" fill="var(--paper)" stroke="var(--line)"/>`;
+    const seat = i => [40 + (i % 28) * 20.5, 122 + Math.floor(i / 28) * 22];
+    for (let i = 0; i < 140; i++) { const [x, y] = seat(i); s += `<rect x="${x - 5}" y="${y - 5}" width="10" height="10" rx="3" fill="none" stroke="var(--line)"/>`; }
+    Object.values(st.visits).filter(v => v.status === 'waiting' && v.dept !== 'ER').forEach((v, i) => { const [x, y] = seat(v.seat != null ? v.seat % 140 : i); const dp = E.dept(st, v.dept); s += `<circle cx="${x}" cy="${y}" r="6" fill="${dp.color}"/>`; });
+    $('#twin').innerHTML = s;
+  }
+  paint();
+  setInterval(() => { t += 2 * E.MIN; d.sim.step(t); d.engine.takeDelta(t); paint(); }, 2600);
+  setInterval(() => { li = (li + 1) % 3; const el = $('#hLang'); el.style.opacity = 0; setTimeout(() => { el.textContent = LANG[li][0]; el.style.fontFamily = LANG[li][1]; el.style.opacity = 1; }, 300); }, 3200);
+})();
+</script>
+</body>
+</html>

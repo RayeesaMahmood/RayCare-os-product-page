@@ -1,0 +1,198 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Your Turn · RayCare</title>
+<meta name="robots" content="noindex">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,800&family=Figtree:wght@400;600;700&family=JetBrains+Mono:wght@700&family=Noto+Sans+Devanagari:wght@500;700&family=Noto+Sans+Telugu:wght@500;700&display=swap">
+<style>
+/* RayCare design tokens and shared primitives.
+   Used by the staff app, lobby TV, patient tracker and QR check-in pages. */
+:root{
+  --bg:#F2F5FA; --surface:#FFFFFF; --sunk:#E9EEF6; --ink:#0B1B3A; --muted:#56637C; --line:#D9E1EE;
+  --brand:#1D4ED8; --brand-ink:#FFFFFF; --brand-soft:#E2E9FF; --signal:#E8641A; --signal-soft:#FFEADD;
+  --rail:#07112B; --rail-2:#0E1C40; --rail-line:#1B2A55; --rail-text:#A9B7DE; --led:#FFB547;
+  --ok:#15803D; --warn:#B7791F; --crit:#D92D20;
+  --esi1:#D92D20; --esi2:#E8641A; --esi3:#C98A04; --esi4:#15803D; --esi5:#2563EB;
+  --f-display:"Bricolage Grotesque","Segoe UI",system-ui,sans-serif;
+  --f-body:"Figtree","Segoe UI",system-ui,sans-serif;
+  --f-mono:"JetBrains Mono",ui-monospace,Menlo,Consolas,monospace;
+  --f-indic:"Noto Sans Devanagari","Noto Sans Telugu",system-ui,sans-serif;
+  --r:14px; --shadow:0 1px 2px rgba(11,27,58,.06),0 12px 30px -14px rgba(11,27,58,.22);
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#060C1B; --surface:#0E172D; --sunk:#0A1224; --ink:#E6EBF6; --muted:#97A4BE; --line:#1F2E4C;
+  --brand:#7A9BFF; --brand-ink:#06102A; --brand-soft:#15234A; --signal:#FF8A45; --signal-soft:#361E10;
+  --rail:#030817; --rail-2:#0A1532;
+  --ok:#4ADE80; --warn:#F2C14E; --crit:#FF6B5E;
+  --esi1:#FF6B5E; --esi2:#FF8A45; --esi3:#F2C14E; --esi4:#4ADE80; --esi5:#7AA2FF;
+  --shadow:0 1px 2px rgba(0,0,0,.4),0 14px 34px -14px rgba(0,0,0,.75); color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#060C1B; --surface:#0E172D; --sunk:#0A1224; --ink:#E6EBF6; --muted:#97A4BE; --line:#1F2E4C;
+  --brand:#7A9BFF; --brand-ink:#06102A; --brand-soft:#15234A; --signal:#FF8A45; --signal-soft:#361E10;
+  --rail:#030817; --rail-2:#0A1532;
+  --ok:#4ADE80; --warn:#F2C14E; --crit:#FF6B5E;
+  --esi1:#FF6B5E; --esi2:#FF8A45; --esi3:#F2C14E; --esi4:#4ADE80; --esi5:#7AA2FF;
+  --shadow:0 1px 2px rgba(0,0,0,.4),0 14px 34px -14px rgba(0,0,0,.75); color-scheme:dark}
+
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.55 var(--f-body);-webkit-font-smoothing:antialiased}
+h1,h2,h3,h4{font-family:var(--f-display);letter-spacing:-.015em;line-height:1.12;margin:0;text-wrap:balance}
+h1{font-size:1.7rem;font-weight:800} h2{font-size:1.15rem;font-weight:700} h3{font-size:1rem;font-weight:700}
+p{margin:0}
+a{color:var(--brand)}
+button{font-family:inherit;color:inherit}
+.mono{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+.tnum{font-variant-numeric:tabular-nums}
+.muted{color:var(--muted)} .small{font-size:.84rem}
+:focus-visible{outline:3px solid var(--signal);outline-offset:2px;border-radius:6px}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;border:1px solid transparent;border-radius:10px;padding:9px 14px;font:700 .86rem/1 var(--f-body);cursor:pointer;white-space:nowrap;transition:transform .12s,background .15s,border-color .15s;text-decoration:none}
+.btn:active{transform:translateY(1px)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.b-pri{background:var(--brand);color:var(--brand-ink)}
+.b-sig{background:var(--signal);color:#fff}
+.b-crit{background:var(--crit);color:#fff}
+.b-ok{background:var(--ok);color:#fff}
+.b-gh{background:var(--surface);border-color:var(--line);color:var(--ink)}
+.b-gh:hover{border-color:var(--muted)}
+.b-sm{padding:6px 10px;font-size:.78rem;border-radius:8px}
+.b-lg{padding:13px 20px;font-size:.98rem;border-radius:12px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:18px;min-width:0}
+.card-h{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px;flex-wrap:wrap}
+.card-h p{font-size:.82rem;color:var(--muted)}
+.chip{display:inline-flex;align-items:center;gap:5px;font:700 .7rem/1 var(--f-body);padding:5px 7px;border-radius:6px;color:#fff;white-space:nowrap}
+.e1{background:var(--esi1)}.e2{background:var(--esi2)}.e3{background:var(--esi3)}.e4{background:var(--esi4)}.e5{background:var(--esi5)}
+.c-walk{background:var(--sunk);color:var(--muted)} .c-pri{background:var(--brand-soft);color:var(--brand)} .c-appt{background:color-mix(in srgb,#14A3A1 18%,transparent);color:#0E8C8A}
+.pill{display:inline-block;font-size:.72rem;font-weight:700;padding:4px 9px;border-radius:99px;white-space:nowrap}
+.p-ok{color:var(--ok);background:color-mix(in srgb,var(--ok) 14%,transparent)}
+.p-warn{color:var(--warn);background:color-mix(in srgb,var(--warn) 16%,transparent)}
+.p-crit{color:var(--crit);background:color-mix(in srgb,var(--crit) 14%,transparent)}
+.p-info{color:var(--brand);background:var(--brand-soft)}
+.p-mute{color:var(--muted);background:var(--sunk)}
+.ddot{display:inline-block;width:9px;height:9px;border-radius:3px;flex:none}
+.empty{display:grid;place-items:center;gap:6px;text-align:center;padding:26px 14px;color:var(--muted);border:1.5px dashed var(--line);border-radius:12px;font-size:.88rem}
+
+form.f{display:grid;gap:12px}
+.field{display:grid;gap:5px;min-width:0}
+.field>label,.flabel{font-size:.76rem;font-weight:700;color:var(--muted);letter-spacing:.02em}
+.r2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.r3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+@media (max-width:420px){.r3{grid-template-columns:1fr 1fr}}
+input[type=text],input[type=tel],input[type=email],input[type=password],input[type=number],input[type=search],select,textarea{width:100%;padding:10px 11px;border-radius:9px;border:1px solid var(--line);background:var(--surface);color:var(--ink);font:500 .92rem var(--f-body)}
+input:focus,select:focus,textarea:focus{outline:2px solid var(--brand);outline-offset:0;border-color:transparent}
+input[type=range]{width:100%;accent-color:var(--brand)}
+.seg{display:flex;border:1px solid var(--line);border-radius:9px;overflow:hidden;flex-wrap:wrap;background:var(--surface)}
+.seg label{flex:1;text-align:center;padding:8px 6px;cursor:pointer;font-size:.8rem;font-weight:700;color:var(--muted);border-left:1px solid var(--line);position:relative;white-space:nowrap}
+.seg label:first-child{border-left:0}
+.seg input{position:absolute;opacity:0;pointer-events:none}
+.seg label:has(input:checked){background:var(--brand-soft);color:var(--brand)}
+.seg label:has(input:focus-visible){outline:2px solid var(--signal);outline-offset:-2px}
+.tog{display:inline-flex;align-items:center;gap:8px;cursor:pointer;font-size:.86rem;font-weight:600;user-select:none}
+.tog input{appearance:none;width:34px;height:20px;border-radius:99px;background:var(--line);position:relative;cursor:pointer;margin:0;transition:background .2s;flex:none}
+.tog input::after{content:"";position:absolute;top:3px;left:3px;width:14px;height:14px;border-radius:50%;background:#fff;transition:transform .2s}
+.tog input:checked{background:var(--ok)}
+.tog input:checked::after{transform:translateX(14px)}
+.err{color:var(--crit);font-size:.84rem;font-weight:600}
+
+.board{background:var(--rail);border-radius:16px;padding:16px;color:var(--rail-text);position:relative;overflow:hidden}
+.led{font:700 1.4rem/1 var(--f-mono);color:var(--led);text-shadow:0 0 12px rgba(255,181,71,.45);white-space:nowrap}
+.led.flash{animation:ledf 1.1s ease 2}
+@keyframes ledf{50%{color:#fff;text-shadow:0 0 22px rgba(255,255,255,.85)}}
+.brandmark{display:inline-flex;align-items:center;gap:10px;font:800 1.1rem/1 var(--f-display);letter-spacing:-.02em;text-decoration:none;color:inherit}
+.toasts{position:fixed;bottom:calc(18px + env(safe-area-inset-bottom,0px));left:50%;transform:translateX(-50%);z-index:95;display:grid;gap:8px;width:min(440px,calc(100% - 32px))}
+.toast{background:var(--ink);color:var(--bg);padding:11px 16px;border-radius:12px;font-weight:600;font-size:.88rem;box-shadow:var(--shadow);animation:tin .25s ease}
+.toast.bad{background:var(--crit);color:#fff}
+@keyframes tin{from{transform:translateY(8px);opacity:0}}
+@media (prefers-reduced-motion: reduce){*{animation:none!important;transition:none!important}}
+
+</style>
+<style>
+/* Layout: single mobile column, patient's live turn */
+body{font-family:var(--f-body),var(--f-indic)}
+.wrap{max-width:440px;margin:0 auto;padding-inline:16px;padding-block:20px 40px;display:grid;gap:16px}
+.top{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.seg-mini{display:flex;border:1px solid var(--line);border-radius:9px;overflow:hidden;background:var(--surface)}
+.seg-mini button{border:0;background:transparent;padding:7px 10px;font:700 .8rem var(--f-body);cursor:pointer;color:var(--muted)}
+.seg-mini button[aria-pressed="true"]{background:var(--brand-soft);color:var(--brand)}
+.ring{position:relative;width:210px;height:210px;margin:6px auto}
+.ring svg{width:100%;height:100%;transform:rotate(-90deg)}
+.ring .in{position:absolute;inset:0;display:grid;place-items:center;text-align:center}
+.tk{font:700 2.3rem/1 var(--f-mono)}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);text-align:center;gap:8px}
+.stats b{font:800 1.5rem var(--f-display);display:block}
+.way{border-radius:14px;padding:14px;font-weight:600}
+.big{text-align:center;display:grid;gap:10px;padding:36px 0}
+.stars{display:flex;gap:8px;justify-content:center}
+.stars button{border:0;background:none;font-size:2.2rem;cursor:pointer;color:var(--line);padding:0}
+.stars button.on{color:#F5A623}
+.foot{text-align:center;font-size:.78rem;color:var(--muted)}
+</style>
+</head>
+<body>
+<div class="wrap" id="app"><p class="muted" style="text-align:center;padding:60px 0">Loading your visit…</p></div>
+<div class="toasts" id="toasts" aria-live="polite"></div>
+<script>
+(function () {
+  'use strict';
+  const $ = s => document.querySelector(s);
+  const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const T = {
+    en: { hi: 'Hello', pos: 'Position', wait: 'Est. wait', now: 'Now serving', ahead: 'ahead of you', dir: 'Where to go', late: "I'm running late", lateHint: 'Moves you back 3 places so you keep your turn.', turn: "It's your turn!", go: 'Please go to', done: 'Your visit is complete', rate: 'How was your visit today?', thanks: 'Thank you. Your feedback helps us improve.', refresh: 'Updates automatically', bad: 'This tracking link is not valid or has expired. Please ask at the registration desk.', noshow: 'This token was closed. Please visit the registration desk.', min: 'min' },
+    hi: { hi: 'नमस्ते', pos: 'स्थान', wait: 'अनुमानित प्रतीक्षा', now: 'अभी सेवा में', ahead: 'आपसे पहले', dir: 'कहाँ जाएँ', late: 'मुझे देर हो रही है', lateHint: 'आपको 3 स्थान पीछे करता है, बारी बनी रहती है।', turn: 'आपकी बारी है!', go: 'कृपया जाएँ', done: 'आपकी विज़िट पूरी हुई', rate: 'आज आपका अनुभव कैसा रहा?', thanks: 'धन्यवाद। आपकी प्रतिक्रिया से हम बेहतर बनते हैं।', refresh: 'अपने आप अपडेट होता है', bad: 'यह लिंक मान्य नहीं है। कृपया पंजीकरण डेस्क पर पूछें।', noshow: 'यह टोकन बंद हो गया है। कृपया पंजीकरण डेस्क पर जाएँ।', min: 'मिनट' },
+    te: { hi: 'నమస్తే', pos: 'స్థానం', wait: 'అంచనా నిరీక్షణ', now: 'ఇప్పుడు సేవలో', ahead: 'మీ ముందు', dir: 'ఎక్కడికి వెళ్ళాలి', late: 'నేను ఆలస్యంగా వస్తున్నాను', lateHint: 'మిమ్మల్ని 3 స్థానాలు వెనక్కి జరుపుతుంది, మీ వంతు ఉంటుంది.', turn: 'మీ వంతు వచ్చింది!', go: 'దయచేసి వెళ్ళండి', done: 'మీ సందర్శన పూర్తయింది', rate: 'ఈరోజు మీ అనుభవం ఎలా ఉంది?', thanks: 'ధన్యవాదాలు. మీ అభిప్రాయం మాకు సహాయపడుతుంది.', refresh: 'స్వయంచాలకంగా అప్డేట్ అవుతుంది', bad: 'ఈ లింక్ చెల్లదు. దయచేసి రిజిస్ట్రేషన్ డెస్క్ వద్ద అడగండి.', noshow: 'ఈ టోకెన్ మూసివేయబడింది. దయచేసి రిజిస్ట్రేషన్ డెస్క్‌కు వెళ్ళండి.', min: 'ని' }
+  };
+  const q = new URLSearchParams(location.search), id = q.get('v'), key = q.get('k');
+  let lang = null, data = null, startPos = null, demo = false;
+  const toast = t => { const el = document.createElement('div'); el.className = 'toast'; el.textContent = t; $('#toasts').appendChild(el); setTimeout(() => el.remove(), 3200); };
+  const api = (p, opt) => fetch(`/api/public/visit/${encodeURIComponent(id)}${p}?k=${encodeURIComponent(key)}`, opt).then(async r => { const j = await r.json().catch(() => ({})); if (!r.ok) throw Object.assign(new Error((j.error && j.error.message) || 'Error'), { status: j.error ? r.status : 0 }); return j; });
+
+  function render() {
+    const L = T[lang] || T.en, v = data;
+    const langs = (v.langs || ['en']).filter(l => T[l]);
+    const head = `<div class="top"><b style="font-family:var(--f-display);font-size:1.05rem">${esc(v.hospital)}</b>${langs.length > 1 ? `<div class="seg-mini">${langs.map(l => `<button data-l="${l}" aria-pressed="${l === lang}">${l === 'en' ? 'EN' : l === 'hi' ? 'हि' : 'తె'}</button>`).join('')}</div>` : ''}</div>
+      <div><span class="muted small">${L.hi} ${esc(v.firstName)}</span><h1 style="font-size:1.35rem">${esc(v.dept)}</h1></div>`;
+    let body = '';
+    if (v.status === 'waiting') {
+      if (startPos == null || v.position > startPos) startPos = v.position;
+      const pct = Math.max(.05, 1 - (v.position - 1) / Math.max(startPos, 1)), C = 2 * Math.PI * 88;
+      body = `<div class="ring"><svg viewBox="0 0 210 210"><circle cx="105" cy="105" r="88" stroke="var(--sunk)" stroke-width="16" fill="none"/><circle cx="105" cy="105" r="88" stroke="${v.color}" stroke-width="16" fill="none" stroke-linecap="round" stroke-dasharray="${C}" stroke-dashoffset="${C * (1 - pct)}" style="transition:stroke-dashoffset .8s"/></svg><div class="in"><div><div class="muted small">TOKEN</div><div class="tk">${esc(v.tok)}</div><div class="muted small">${v.position - 1} ${L.ahead}</div></div></div></div>
+        <div class="stats card"><div><b>${v.position}</b><span class="muted small">${L.pos}</span></div><div><b>${v.etaMin}<span style="font-size:.6em"> ${L.min}</span></b><span class="muted small">${L.wait}</span></div><div><b class="mono" style="font-size:1.15rem">${esc(v.nowServing || '—')}</b><span class="muted small">${L.now}</span></div></div>
+        <div class="way" style="background:color-mix(in srgb,${v.color} 14%,transparent)"><span class="muted small">${L.dir}</span><br>${esc(v.room)} · ${esc(v.floor)}</div>
+        ${v.lateLeft > 0 ? `<button class="btn b-gh b-lg" id="late">${L.late}</button><p class="muted small" style="text-align:center;margin-top:-6px">${L.lateHint}</p>` : ''}`;
+    } else if (v.status === 'serving') {
+      body = `<div class="big card"><div style="font:800 2rem var(--f-display);color:var(--ok)">${L.turn}</div><div class="tk">${esc(v.tok)}</div><div>${L.go} <b>${esc(v.room)}</b></div><div class="way" style="background:var(--brand-soft);color:var(--brand)">${esc(v.floor)}</div></div>`;
+      if (navigator.vibrate) try { navigator.vibrate([200, 100, 200]); } catch (e) { /* ignore */ }
+    } else if (v.status === 'done') {
+      body = `<div class="big card"><div style="font:800 1.5rem var(--f-display)">${L.done}</div><div class="muted">${esc(v.outcome || '')}</div><div>${L.rate}</div><div class="stars">${[1, 2, 3, 4, 5].map(i => `<button data-s="${i}" class="${v.rated && v.stars >= i ? 'on' : ''}" aria-label="${i} stars">★</button>`).join('')}</div>${v.rated ? `<div class="muted small">${L.thanks}</div>` : ''}</div>`;
+    } else body = `<div class="empty">${L.noshow}</div>`;
+    $('#app').innerHTML = head + body + `<p class="foot">${demo ? 'Demo preview · ' : ''}${L.refresh} · RayCare</p>`;
+  }
+  document.addEventListener('click', async e => {
+    const b = e.target.closest('button'); if (!b) return;
+    if (b.dataset.l) { lang = b.dataset.l; render(); }
+    if (b.id === 'late') { if (demo) return toast('Demo preview'); try { await api('/late', { method: 'POST' }); await load(); toast('✓'); } catch (err) { toast(err.message); } }
+    if (b.dataset.s) { if (demo) { data.rated = true; data.stars = +b.dataset.s; return render(); } try { await api('/feedback', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ stars: +b.dataset.s }) }); data.rated = true; data.stars = +b.dataset.s; render(); } catch (err) { toast(err.message); } }
+  });
+  async function load() {
+    try { if (id === 'demo' || location.protocol === 'file:') throw Object.assign(new Error('demo'), { status: 0 }); data = await api(''); if (!lang) lang = T[data.lang] ? data.lang : 'en'; render(); }
+    catch (err) {
+      if (err.status === 404 || !id) { $('#app').innerHTML = `<div class="empty" style="margin-top:40px">${T.en.bad}<br><br>${T.hi.bad}<br><br>${T.te.bad}</div>`; return false; }
+      if (!data) { // no server reachable: show a labelled demo
+        demo = true; lang = lang || 'en'; data = { hospital: 'Sunrise Multispeciality', langs: ['en', 'hi', 'te'], tok: 'C-118', firstName: 'Anita', dept: 'Cardiology', room: 'OPD 4', floor: 'Ground floor, follow the pink line', color: '#E0457B', status: 'waiting', position: 4, etaMin: 31, nowServing: 'C-114', lateLeft: 2 }; render();
+      }
+    }
+    return true;
+  }
+  load().then(ok => { if (ok && !demo) setInterval(load, 10000); });
+})();
+</script>
+</body>
+</html>

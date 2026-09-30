@@ -1,0 +1,991 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Lobby Display · RayCare</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,800&family=Figtree:wght@500;700&family=JetBrains+Mono:wght@600;700&family=Noto+Sans+Devanagari:wght@600&family=Noto+Sans+Telugu:wght@600&display=swap">
+<style>
+/* RayCare design tokens and shared primitives.
+   Used by the staff app, lobby TV, patient tracker and QR check-in pages. */
+:root{
+  --bg:#F2F5FA; --surface:#FFFFFF; --sunk:#E9EEF6; --ink:#0B1B3A; --muted:#56637C; --line:#D9E1EE;
+  --brand:#1D4ED8; --brand-ink:#FFFFFF; --brand-soft:#E2E9FF; --signal:#E8641A; --signal-soft:#FFEADD;
+  --rail:#07112B; --rail-2:#0E1C40; --rail-line:#1B2A55; --rail-text:#A9B7DE; --led:#FFB547;
+  --ok:#15803D; --warn:#B7791F; --crit:#D92D20;
+  --esi1:#D92D20; --esi2:#E8641A; --esi3:#C98A04; --esi4:#15803D; --esi5:#2563EB;
+  --f-display:"Bricolage Grotesque","Segoe UI",system-ui,sans-serif;
+  --f-body:"Figtree","Segoe UI",system-ui,sans-serif;
+  --f-mono:"JetBrains Mono",ui-monospace,Menlo,Consolas,monospace;
+  --f-indic:"Noto Sans Devanagari","Noto Sans Telugu",system-ui,sans-serif;
+  --r:14px; --shadow:0 1px 2px rgba(11,27,58,.06),0 12px 30px -14px rgba(11,27,58,.22);
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#060C1B; --surface:#0E172D; --sunk:#0A1224; --ink:#E6EBF6; --muted:#97A4BE; --line:#1F2E4C;
+  --brand:#7A9BFF; --brand-ink:#06102A; --brand-soft:#15234A; --signal:#FF8A45; --signal-soft:#361E10;
+  --rail:#030817; --rail-2:#0A1532;
+  --ok:#4ADE80; --warn:#F2C14E; --crit:#FF6B5E;
+  --esi1:#FF6B5E; --esi2:#FF8A45; --esi3:#F2C14E; --esi4:#4ADE80; --esi5:#7AA2FF;
+  --shadow:0 1px 2px rgba(0,0,0,.4),0 14px 34px -14px rgba(0,0,0,.75); color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#060C1B; --surface:#0E172D; --sunk:#0A1224; --ink:#E6EBF6; --muted:#97A4BE; --line:#1F2E4C;
+  --brand:#7A9BFF; --brand-ink:#06102A; --brand-soft:#15234A; --signal:#FF8A45; --signal-soft:#361E10;
+  --rail:#030817; --rail-2:#0A1532;
+  --ok:#4ADE80; --warn:#F2C14E; --crit:#FF6B5E;
+  --esi1:#FF6B5E; --esi2:#FF8A45; --esi3:#F2C14E; --esi4:#4ADE80; --esi5:#7AA2FF;
+  --shadow:0 1px 2px rgba(0,0,0,.4),0 14px 34px -14px rgba(0,0,0,.75); color-scheme:dark}
+
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.55 var(--f-body);-webkit-font-smoothing:antialiased}
+h1,h2,h3,h4{font-family:var(--f-display);letter-spacing:-.015em;line-height:1.12;margin:0;text-wrap:balance}
+h1{font-size:1.7rem;font-weight:800} h2{font-size:1.15rem;font-weight:700} h3{font-size:1rem;font-weight:700}
+p{margin:0}
+a{color:var(--brand)}
+button{font-family:inherit;color:inherit}
+.mono{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+.tnum{font-variant-numeric:tabular-nums}
+.muted{color:var(--muted)} .small{font-size:.84rem}
+:focus-visible{outline:3px solid var(--signal);outline-offset:2px;border-radius:6px}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;border:1px solid transparent;border-radius:10px;padding:9px 14px;font:700 .86rem/1 var(--f-body);cursor:pointer;white-space:nowrap;transition:transform .12s,background .15s,border-color .15s;text-decoration:none}
+.btn:active{transform:translateY(1px)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.b-pri{background:var(--brand);color:var(--brand-ink)}
+.b-sig{background:var(--signal);color:#fff}
+.b-crit{background:var(--crit);color:#fff}
+.b-ok{background:var(--ok);color:#fff}
+.b-gh{background:var(--surface);border-color:var(--line);color:var(--ink)}
+.b-gh:hover{border-color:var(--muted)}
+.b-sm{padding:6px 10px;font-size:.78rem;border-radius:8px}
+.b-lg{padding:13px 20px;font-size:.98rem;border-radius:12px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:18px;min-width:0}
+.card-h{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px;flex-wrap:wrap}
+.card-h p{font-size:.82rem;color:var(--muted)}
+.chip{display:inline-flex;align-items:center;gap:5px;font:700 .7rem/1 var(--f-body);padding:5px 7px;border-radius:6px;color:#fff;white-space:nowrap}
+.e1{background:var(--esi1)}.e2{background:var(--esi2)}.e3{background:var(--esi3)}.e4{background:var(--esi4)}.e5{background:var(--esi5)}
+.c-walk{background:var(--sunk);color:var(--muted)} .c-pri{background:var(--brand-soft);color:var(--brand)} .c-appt{background:color-mix(in srgb,#14A3A1 18%,transparent);color:#0E8C8A}
+.pill{display:inline-block;font-size:.72rem;font-weight:700;padding:4px 9px;border-radius:99px;white-space:nowrap}
+.p-ok{color:var(--ok);background:color-mix(in srgb,var(--ok) 14%,transparent)}
+.p-warn{color:var(--warn);background:color-mix(in srgb,var(--warn) 16%,transparent)}
+.p-crit{color:var(--crit);background:color-mix(in srgb,var(--crit) 14%,transparent)}
+.p-info{color:var(--brand);background:var(--brand-soft)}
+.p-mute{color:var(--muted);background:var(--sunk)}
+.ddot{display:inline-block;width:9px;height:9px;border-radius:3px;flex:none}
+.empty{display:grid;place-items:center;gap:6px;text-align:center;padding:26px 14px;color:var(--muted);border:1.5px dashed var(--line);border-radius:12px;font-size:.88rem}
+
+form.f{display:grid;gap:12px}
+.field{display:grid;gap:5px;min-width:0}
+.field>label,.flabel{font-size:.76rem;font-weight:700;color:var(--muted);letter-spacing:.02em}
+.r2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.r3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+@media (max-width:420px){.r3{grid-template-columns:1fr 1fr}}
+input[type=text],input[type=tel],input[type=email],input[type=password],input[type=number],input[type=search],select,textarea{width:100%;padding:10px 11px;border-radius:9px;border:1px solid var(--line);background:var(--surface);color:var(--ink);font:500 .92rem var(--f-body)}
+input:focus,select:focus,textarea:focus{outline:2px solid var(--brand);outline-offset:0;border-color:transparent}
+input[type=range]{width:100%;accent-color:var(--brand)}
+.seg{display:flex;border:1px solid var(--line);border-radius:9px;overflow:hidden;flex-wrap:wrap;background:var(--surface)}
+.seg label{flex:1;text-align:center;padding:8px 6px;cursor:pointer;font-size:.8rem;font-weight:700;color:var(--muted);border-left:1px solid var(--line);position:relative;white-space:nowrap}
+.seg label:first-child{border-left:0}
+.seg input{position:absolute;opacity:0;pointer-events:none}
+.seg label:has(input:checked){background:var(--brand-soft);color:var(--brand)}
+.seg label:has(input:focus-visible){outline:2px solid var(--signal);outline-offset:-2px}
+.tog{display:inline-flex;align-items:center;gap:8px;cursor:pointer;font-size:.86rem;font-weight:600;user-select:none}
+.tog input{appearance:none;width:34px;height:20px;border-radius:99px;background:var(--line);position:relative;cursor:pointer;margin:0;transition:background .2s;flex:none}
+.tog input::after{content:"";position:absolute;top:3px;left:3px;width:14px;height:14px;border-radius:50%;background:#fff;transition:transform .2s}
+.tog input:checked{background:var(--ok)}
+.tog input:checked::after{transform:translateX(14px)}
+.err{color:var(--crit);font-size:.84rem;font-weight:600}
+
+.board{background:var(--rail);border-radius:16px;padding:16px;color:var(--rail-text);position:relative;overflow:hidden}
+.led{font:700 1.4rem/1 var(--f-mono);color:var(--led);text-shadow:0 0 12px rgba(255,181,71,.45);white-space:nowrap}
+.led.flash{animation:ledf 1.1s ease 2}
+@keyframes ledf{50%{color:#fff;text-shadow:0 0 22px rgba(255,255,255,.85)}}
+.brandmark{display:inline-flex;align-items:center;gap:10px;font:800 1.1rem/1 var(--f-display);letter-spacing:-.02em;text-decoration:none;color:inherit}
+.toasts{position:fixed;bottom:calc(18px + env(safe-area-inset-bottom,0px));left:50%;transform:translateX(-50%);z-index:95;display:grid;gap:8px;width:min(440px,calc(100% - 32px))}
+.toast{background:var(--ink);color:var(--bg);padding:11px 16px;border-radius:12px;font-weight:600;font-size:.88rem;box-shadow:var(--shadow);animation:tin .25s ease}
+.toast.bad{background:var(--crit);color:#fff}
+@keyframes tin{from{transform:translateY(8px);opacity:0}}
+@media (prefers-reduced-motion: reduce){*{animation:none!important;transition:none!important}}
+
+</style>
+<style>
+/* Layout: full-bleed LED board for a lobby TV; always dark by design */
+:root{color-scheme:dark}
+html,body{height:100%}
+body{background:#040A1C;color:#C9D4F2;overflow:hidden}
+.tv{height:100%;display:grid;grid-template-rows:auto 1fr auto;padding:clamp(16px,3vw,40px);gap:clamp(12px,2vh,24px)}
+.top{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;border-bottom:1px dashed #1B2A55;padding-bottom:clamp(10px,2vh,20px)}
+.hn{font:700 clamp(.8rem,1.2vw,1.1rem) var(--f-body);letter-spacing:.16em;text-transform:uppercase;color:#8EA0D6}
+.lang{font:700 clamp(1.6rem,3.4vw,3.2rem)/1.15 var(--f-indic);color:#FFB547;min-height:1.2em;transition:opacity .3s}
+.clk{font:700 clamp(1.8rem,3.6vw,3.6rem)/1 var(--f-mono);color:#fff}
+.grid{display:grid;grid-template-columns:minmax(0,1.5fr) auto auto auto;column-gap:clamp(16px,3vw,48px);align-content:start;overflow:hidden}
+.h{font:700 clamp(.7rem,1vw,.95rem)/1 var(--f-body);letter-spacing:.14em;text-transform:uppercase;color:#6F80B6;padding:0 4px clamp(8px,1.5vh,14px)}
+.c{padding:clamp(10px,2vh,20px) 4px;border-top:1px solid #1B2A55;display:flex;align-items:center}
+.dn{display:grid;color:#fff;font-weight:700;font-size:clamp(1.1rem,2.2vw,2.2rem);line-height:1.15;min-width:0}
+.dn small{font-weight:500;color:#7F90C3;font-size:.55em}
+.dn i{display:inline-block;width:.45em;height:.45em;border-radius:3px;margin-right:.35em;vertical-align:.12em}
+.led{font:700 clamp(1.8rem,4.2vw,4.4rem)/1 var(--f-mono);color:#FFB547;text-shadow:0 0 18px rgba(255,181,71,.5)}
+.nx{font:600 clamp(1rem,2vw,2rem) var(--f-mono);color:#9FB0E0}
+.wt{font:700 clamp(.95rem,1.8vw,1.8rem) var(--f-mono);color:#9FB0E0;justify-content:flex-end}
+.foot{display:flex;gap:12px;flex-wrap:wrap;align-items:center;font:600 clamp(.85rem,1.4vw,1.3rem) var(--f-mono)}
+.foot span.call{border:1px solid #1B2A55;border-radius:10px;padding:6px 12px}
+.foot .lbl{font-family:var(--f-body);color:#6F80B6;font-size:.8em;letter-spacing:.12em}
+.sound{position:fixed;right:16px;bottom:16px;background:#0E1C40;color:#fff;border:1px solid #1B2A55;border-radius:10px;padding:10px 14px;font:700 .9rem var(--f-body);cursor:pointer}
+.note{position:fixed;left:16px;bottom:16px;font:600 .8rem var(--f-body);color:#6F80B6}
+@media (max-width:700px){.grid{grid-template-columns:minmax(0,1fr) auto auto}.nxc{display:none}}
+</style>
+</head>
+<body>
+<div class="tv"><div class="top"><div><div class="hn" id="hn">RayCare</div><div class="lang" id="lang">Now serving</div></div><div class="clk" id="clk">--:--</div></div>
+<div class="grid" id="grid"></div><div class="foot" id="foot"></div></div>
+<button class="sound" id="sound" type="button">Turn on announcements</button>
+<div class="note" id="note" hidden></div>
+<script>
+/*!
+ * RayCare engine — the single source of truth for queue, triage, bed and
+ * appointment logic. Pure JavaScript, no dependencies.
+ *
+ * The same file runs in two places:
+ *   - on the server (Node.js), wrapped with persistence, auth and realtime
+ *   - in the browser, for the offline demo mode
+ *
+ * Every change goes through `engine.dispatch(command, payload, actor, now)`.
+ * The engine records what changed; `engine.takeDelta()` returns those
+ * entities so the server can persist them and stream them to clients, and
+ * `applyDelta(state, delta)` merges them into a client-side copy.
+ */
+(function (root, factory) {
+  if (typeof module === 'object' && module.exports) module.exports = factory();
+  else root.RayCareEngine = factory();
+})(typeof globalThis !== 'undefined' ? globalThis : this, function () {
+  'use strict';
+
+  const MIN = 60000;
+  const VERSION = '2.0.0';
+
+  /* ------------------------------------------------------------------ *
+   * Reference data
+   * ------------------------------------------------------------------ */
+  const TEMPLATES = {
+    GEN: { name: 'General Medicine', pre: 'G', avg: 6, color: '#3B6FF5' },
+    PED: { name: 'Paediatrics', pre: 'P', avg: 7, color: '#8B5CF6' },
+    CAR: { name: 'Cardiology', pre: 'C', avg: 11, color: '#E0457B' },
+    DER: { name: 'Dermatology', pre: 'D', avg: 7, color: '#14A3A1' },
+    ORT: { name: 'Orthopaedics', pre: 'O', avg: 8, color: '#E8910C' },
+    ENT: { name: 'ENT', pre: 'N', avg: 7, color: '#0EA5E9' },
+    GYN: { name: 'Obstetrics & Gynaecology', pre: 'W', avg: 10, color: '#DB2777' },
+    OPH: { name: 'Ophthalmology', pre: 'Y', avg: 6, color: '#65A30D' },
+    DEN: { name: 'Dental', pre: 'T', avg: 12, color: '#F97316' },
+    NEU: { name: 'Neurology', pre: 'U', avg: 12, color: '#6366F1' }
+  };
+  const ER = { id: 'ER', name: 'Emergency', pre: 'E', avg: 14, color: '#E5484D', room: 'Resus bay', doc: 'On-call ER team', floor: 'East entrance, ambulance bay', open: true, rooms: 1 };
+  const WARD_TYPES = { ICU: { name: 'ICU', prefix: 'I' }, GW: { name: 'General Ward', prefix: 'A' }, PW: { name: 'Paediatric Ward', prefix: 'P' } };
+  const LANGS = { en: 'English', hi: 'हिन्दी', te: 'తెలుగు', ta: 'தமிழ்', kn: 'ಕನ್ನಡ', ur: 'اردو' };
+  const OUTCOMES = ['Prescription issued', 'Lab tests ordered', 'Imaging ordered', 'Follow-up in 2 weeks', 'Discharged home', 'Admit'];
+  const ESI_LABEL = { 1: 'Immediate', 2: 'Emergent', 3: 'Urgent', 4: 'Less urgent', 5: 'Non-urgent' };
+  const COMPLAINTS = { chest: 'Chest pain', stroke: 'Stroke signs', breath: 'Breathing difficulty', trauma: 'Injury / accident', abdo: 'Abdominal pain', fever: 'Fever', minor: 'Minor cut or sprain', rx: 'Prescription refill' };
+  /* Typical OPD arrival profile by hour (relative). Used for the forecast. */
+  const PROFILE = { 8: 0.55, 9: 0.9, 10: 1, 11: 1, 12: 0.85, 13: 0.5, 14: 0.7, 15: 0.75, 16: 0.55, 17: 0.3 };
+  const CLEANING_MIN = 20;
+  const MAX_LATE = 2;
+
+  /* Who may run which command. `system` is the server itself. */
+  const COMMANDS = {
+    registerPatient: ['admin', 'desk', 'system'],
+    callNext: ['admin', 'desk', 'doctor', 'nurse', 'system'],
+    callVisit: ['admin', 'desk', 'doctor', 'nurse'],
+    completeVisit: ['admin', 'doctor', 'nurse', 'system'],
+    markNoShow: ['admin', 'desk', 'doctor', 'nurse'],
+    recall: ['admin', 'desk', 'doctor', 'nurse'],
+    runningLate: ['admin', 'desk', 'patient', 'system'],
+    triage: ['admin', 'nurse', 'doctor', 'system'],
+    overrideEsi: ['admin', 'doctor'],
+    ambulancePreAlert: ['admin', 'nurse', 'desk', 'system'],
+    prepareBay: ['admin', 'nurse', 'doctor'],
+    assignBed: ['admin', 'nurse'],
+    dischargeBed: ['admin', 'nurse', 'doctor'],
+    markBedReady: ['admin', 'nurse'],
+    bookAppointment: ['admin', 'desk'],
+    checkInAppointment: ['admin', 'desk'],
+    submitFeedback: ['admin', 'desk', 'patient', 'system'],
+    updateSettings: ['admin'],
+    updateDepartment: ['admin'],
+    addDepartment: ['admin'],
+    codeBlue: ['admin', 'nurse', 'doctor', 'desk'],
+    clearCodeBlue: ['admin', 'nurse', 'doctor'],
+    ackAlerts: ['admin', 'desk', 'doctor', 'nurse'],
+    markNotified: ['system']
+  };
+  const ROLES = { admin: 'Administrator', desk: 'Front desk', doctor: 'Doctor', nurse: 'Nurse', patient: 'Patient', system: 'System' };
+
+  class EngineError extends Error {
+    constructor(code, message) { super(message); this.name = 'EngineError'; this.code = code; }
+  }
+  const fail = (code, msg) => { throw new EngineError(code, msg); };
+
+  /* ------------------------------------------------------------------ *
+   * Time helpers (hospital local time)
+   * ------------------------------------------------------------------ */
+  const pad = n => String(n).padStart(2, '0');
+  function dayKey(ms) { const d = new Date(ms); return d.getFullYear() + pad(d.getMonth() + 1) + pad(d.getDate()); }
+  function startOfDay(ms) { const d = new Date(ms); d.setHours(0, 0, 0, 0); return d.getTime(); }
+  function atMinute(ms, minuteOfDay) { return startOfDay(ms) + minuteOfDay * MIN; }
+  function hourOf(ms) { return new Date(ms).getHours(); }
+  function mins(from, to) { return Math.max(0, Math.round((to - from) / MIN)); }
+  function hhmm(ms) { const d = new Date(ms); return pad(d.getHours()) + ':' + pad(d.getMinutes()); }
+  function clock12(ms) { const d = new Date(ms); const h = d.getHours(); return (h % 12 || 12) + ':' + pad(d.getMinutes()) + (h >= 12 ? ' PM' : ' AM'); }
+
+  /* ------------------------------------------------------------------ *
+   * Validation helpers
+   * ------------------------------------------------------------------ */
+  function str(v, field, { min = 0, max = 120, required = false } = {}) {
+    const s = v == null ? '' : String(v).trim().replace(/\s+/g, ' ');
+    if (required && !s) fail('invalid', `${field} is required`);
+    if (s.length < min) fail('invalid', `${field} is too short`);
+    if (s.length > max) fail('invalid', `${field} is too long (max ${max})`);
+    return s;
+  }
+  function num(v, field, { min = -Infinity, max = Infinity, fallback } = {}) {
+    if ((v === '' || v == null) && fallback !== undefined) return fallback;
+    const n = Number(v);
+    if (!Number.isFinite(n)) fail('invalid', `${field} must be a number`);
+    if (n < min || n > max) fail('invalid', `${field} must be between ${min} and ${max}`);
+    return n;
+  }
+  const digits = p => String(p || '').replace(/\D/g, '');
+  function maskPhone(p) { const d = digits(p); return d.length >= 10 ? d.slice(-10, -8) + 'xxxxx' + d.slice(-3) : ''; }
+
+  /* ------------------------------------------------------------------ *
+   * State
+   * ------------------------------------------------------------------ */
+  function createState(cfg = {}) {
+    const h = cfg.hospital || {};
+    const depts = (cfg.depts || []).map((d, i) => {
+      const t = TEMPLATES[d.id] || {};
+      return {
+        id: d.id, name: d.name || t.name || d.id, pre: d.pre || t.pre || d.id[0],
+        avg: d.avg || t.avg || 8, color: d.color || t.color || '#3B6FF5',
+        room: d.room || 'OPD ' + (i + 1), doc: d.doc || 'Duty doctor',
+        floor: d.floor || 'Ground floor', open: d.open !== false, rooms: 1
+      };
+    });
+    if (!depts.find(d => d.id === 'ER')) depts.push({ ...ER });
+    const beds = [];
+    (cfg.wards || [{ id: 'ICU', count: 8 }, { id: 'GW', count: 16 }, { id: 'PW', count: 10 }]).forEach(w => {
+      const t = WARD_TYPES[w.id]; if (!t) return;
+      for (let i = 1; i <= w.count; i++) beds.push({ id: t.prefix + '-' + pad(i), ward: w.id, status: 'free', pid: null, name: null, since: 0 });
+    });
+    return {
+      schema: 1,
+      hospital: {
+        name: h.name || 'My Hospital', city: h.city || '', langs: h.langs || ['en', 'hi', 'te'],
+        sla: { busy: 20, over: 45, ...(h.sla || {}) }, publicCheckin: h.publicCheckin !== false,
+        setupComplete: !!h.setupComplete, createdAt: h.createdAt || 0
+      },
+      depts,
+      wardNames: { ICU: 'ICU', GW: 'General Ward A', PW: 'Paediatric Ward', ...(cfg.wardNames || {}) },
+      counters: { day: '', tok: {}, patient: 1000, req: 1, amb: 1, fb: 1, alert: 1 },
+      serving: {},
+      visits: {}, patients: {}, beds, bedReqs: [], ambulances: [], appts: [], feedback: [], alerts: [],
+      audit: [], recall: null, codeBlue: null, lastCalls: [], v: 0
+    };
+  }
+
+  /* ------------------------------------------------------------------ *
+   * Selectors (pure reads)
+   * ------------------------------------------------------------------ */
+  const dept = (st, id) => st.depts.find(d => d.id === id);
+  const opdDepts = st => st.depts.filter(d => d.id !== 'ER');
+  const visitsList = st => Object.values(st.visits);
+  const todayVisits = (st, now) => { const k = dayKey(now); return visitsList(st).filter(v => v.day === k); };
+
+  /* Priority: ESI 1-2, ESI 3, priority flag, appointment, other ESI, walk-in. */
+  function sortKey(v) { return v.esi && v.esi <= 2 ? v.esi : v.esi === 3 ? 3 : v.pri ? 4 : v.appt ? 5 : v.esi ? 6 + v.esi : 9; }
+  function waiting(st, id) {
+    return visitsList(st).filter(v => v.dept === id && v.status === 'waiting')
+      .sort((a, b) => (sortKey(a) - sortKey(b)) || ((a.arrived + (a.lateOffset || 0)) - (b.arrived + (b.lateOffset || 0))));
+  }
+  /* Consult pace learns from today's real consults once there are 5 or more. */
+  function pace(st, id, now) {
+    const d = dept(st, id); if (!d) return 8;
+    const k = dayKey(now);
+    const durs = visitsList(st).filter(v => v.dept === id && v.day === k && v.status === 'done' && v.start && v.end && v.outcome !== 'No-show')
+      .sort((a, b) => b.end - a.end).slice(0, 20).map(v => (v.end - v.start) / MIN).filter(x => x > 0.5 && x < 90);
+    if (durs.length < 5) return d.avg;
+    durs.sort((a, b) => a - b);
+    const med = durs[Math.floor(durs.length / 2)];
+    return Math.max(2, Math.round((med * 0.7 + d.avg * 0.3) * 10) / 10);
+  }
+  function remaining(st, id, now) {
+    const c = st.serving[id] && st.visits[st.serving[id]];
+    if (!c) return 0;
+    return Math.max(1, Math.round(pace(st, id, now) - (now - c.start) / MIN));
+  }
+  function newWait(st, id, now) { return Math.round(remaining(st, id, now) + waiting(st, id).length * pace(st, id, now)); }
+  function eta(st, visitId, now) {
+    const v = st.visits[visitId]; if (!v || v.status !== 'waiting') return { pos: 0, mins: 0 };
+    const list = waiting(st, v.dept), i = list.indexOf(v);
+    return { pos: i + 1, mins: Math.round(remaining(st, v.dept, now) + i * pace(st, v.dept, now)) };
+  }
+  function slaStatus(st, m) { return m > st.hospital.sla.over ? 'over' : m > st.hospital.sla.busy ? 'busy' : 'ok'; }
+  function occupancy(st, ward) {
+    const b = st.beds.filter(x => !ward || x.ward === ward);
+    return { total: b.length, occupied: b.filter(x => x.status === 'occupied').length, free: b.filter(x => x.status === 'free').length, cleaning: b.filter(x => x.status === 'cleaning').length };
+  }
+  const openBedReqs = st => st.bedReqs.filter(r => r.status === 'open');
+  const inboundAmbulances = st => st.ambulances.filter(a => a.status === 'inbound');
+  const median = a => { if (!a.length) return 0; const s = a.slice().sort((x, y) => x - y); return Math.round(s[Math.floor(s.length / 2)]); };
+
+  function stats(st, now) {
+    const today = todayVisits(st, now);
+    const started = today.filter(v => v.start);
+    const waits = started.filter(v => v.dept !== 'ER').map(v => (v.start - v.arrived) / MIN);
+    const done = today.filter(v => v.status === 'done');
+    const hourly = {}, waitByHour = {}, waitByDept = {};
+    done.forEach(v => { const h = hourOf(v.end); hourly[h] = (hourly[h] || 0) + 1; });
+    started.forEach(v => {
+      const h = hourOf(v.start), w = (v.start - v.arrived) / MIN;
+      (waitByHour[h] = waitByHour[h] || []).push(w); (waitByDept[v.dept] = waitByDept[v.dept] || []).push(w);
+    });
+    const avg = a => a.length ? Math.round(a.reduce((x, y) => x + y, 0) / a.length) : 0;
+    const fb = st.feedback.filter(f => dayKey(f.t) === dayKey(now));
+    const appts = st.appts.filter(a => a.day === dayKey(now) && a.status !== 'open' && a.t < now);
+    const noShows = appts.filter(a => a.status === 'noshow').length;
+    const nowH = hourOf(now);
+    let expectedSoFar = 0; for (let h = 8; h <= nowH; h++) expectedSoFar += PROFILE[h] || 0;
+    const scale = expectedSoFar ? Math.max(8, today.filter(v => v.dept !== 'ER').length / expectedSoFar) : 30;
+    const forecast = {}; for (let h = nowH + 1; h <= 17; h++) if (PROFILE[h]) forecast[h] = Math.round(PROFILE[h] * scale);
+    return {
+      served: done.length, arrivals: today.length, waitingNow: visitsList(st).filter(v => v.status === 'waiting' && v.dept !== 'ER').length,
+      avgWait: avg(waits), medianWait: median(waits), slaCompliance: waits.length ? Math.round(waits.filter(w => w <= st.hospital.sla.over).length / waits.length * 100) : 100,
+      hourly, forecast, waitByHour: Object.fromEntries(Object.entries(waitByHour).map(([h, a]) => [h, avg(a)])),
+      waitByDept: Object.fromEntries(Object.entries(waitByDept).map(([d, a]) => [d, avg(a)])),
+      pulse: fb.length ? Math.round(fb.reduce((a, f) => a + f.stars, 0) / fb.length * 100) / 100 : 0, ratings: fb.length,
+      noShowRate: appts.length ? Math.round(noShows / appts.length * 100) : 0
+    };
+  }
+
+  function suggestion(st, now) {
+    const rows = opdDepts(st).filter(d => d.open).map(d => ({ d, m: newWait(st, d.id, now) }));
+    if (rows.length < 2) return null;
+    const hi = rows.reduce((a, b) => b.m > a.m ? b : a), lo = rows.reduce((a, b) => b.m < a.m ? b : a);
+    if (hi.m - lo.m <= 15) return null;
+    return { from: lo.d.id, to: hi.d.id, fromWait: lo.m, toWait: hi.m, expected: Math.round(hi.m / 2) };
+  }
+
+  /* Emergency Severity Index suggestion (simplified ESI v4 decision points). */
+  function triage(i) {
+    const c = i.complaint, spo = Number(i.spo2), hr = Number(i.hr), bp = Number(i.bp), pain = Number(i.pain) || 0, age = Number(i.age), av = i.avpu || 'A';
+    const r = []; let level;
+    if (av === 'P' || av === 'U') { level = 1; r.push('responds only to pain or not at all'); }
+    else if (spo && spo < 88) { level = 1; r.push('SpO₂ below 88%'); }
+    else if (bp && bp < 80) { level = 1; r.push('systolic BP below 80'); }
+    else if (['chest', 'stroke', 'breath'].includes(c)) { level = 2; r.push('high-risk complaint'); }
+    else if ((spo && spo < 92) || hr > 120 || (hr && hr < 50) || bp > 180) { level = 2; r.push('danger-zone vital signs'); }
+    else if (pain >= 8) { level = 2; r.push('severe pain'); }
+    else if (['trauma', 'abdo'].includes(c) || (c === 'fever' && (age > 65 || age < 2))) { level = 3; r.push('needs two or more resources'); }
+    else if (c === 'fever' || c === 'minor') { level = 4; r.push('needs one resource'); }
+    else { level = 5; r.push('no resources needed'); }
+    return { level, label: ESI_LABEL[level], reasons: r };
+  }
+
+  /* Public, name-free projection for lobby screens. */
+  function board(st, now) {
+    return {
+      hospital: st.hospital.name, now,
+      rows: st.depts.filter(d => d.open).map(d => {
+        const c = st.serving[d.id] && st.visits[st.serving[d.id]], n = waiting(st, d.id)[0];
+        return { id: d.id, name: d.name, room: d.room, color: d.color, serving: c ? c.tok : null, next: n ? n.tok : null, wait: d.id === 'ER' ? null : newWait(st, d.id, now) };
+      }),
+      recall: st.recall, lastCalls: st.lastCalls.slice(0, 6), langs: st.hospital.langs
+    };
+  }
+
+  /* Compact snapshot for the AI Copilot. */
+  function snapshot(st, now) {
+    const s = stats(st, now);
+    return {
+      time: clock12(now), hospital: st.hospital.name,
+      departments: opdDepts(st).map(d => ({ id: d.id, name: d.name, doctor: d.doc, open: d.open, waiting: waiting(st, d.id).length, now_serving: st.serving[d.id] ? st.visits[st.serving[d.id]].tok : null, new_arrival_wait_min: newWait(st, d.id, now), status: slaStatus(st, newWait(st, d.id, now)) })),
+      emergency: { in_resus: st.serving.ER ? st.visits[st.serving.ER].tok : null, waiting: waiting(st, 'ER').map(v => ({ token: v.tok, esi: v.esi, waited_min: mins(v.arrived, now) })) },
+      ambulances_inbound: inboundAmbulances(st).map(a => ({ id: a.id, complaint: a.complaint, esi: a.esi, eta_min: mins(now, a.arriveAt), bay_prepared: a.prepared })),
+      beds: Object.keys(WARD_TYPES).map(w => ({ ward: st.wardNames[w], ...occupancy(st, w) })).filter(b => b.total),
+      pending_admissions: openBedReqs(st).map(r => ({ id: r.id, patient: r.name, needs: st.wardNames[r.ward], waiting_min: mins(r.at, now) })),
+      today: { patients_seen: s.served, avg_wait_min: s.avgWait, median_wait_min: s.medianWait, sla_compliance_pct: s.slaCompliance, patient_pulse: s.pulse, no_show_rate_pct: s.noShowRate },
+      forecast_next_hours: s.forecast, suggestion: suggestion(st, now)
+    };
+  }
+
+  /* ------------------------------------------------------------------ *
+   * Deltas
+   * ------------------------------------------------------------------ */
+  const LISTS = ['beds', 'bedReqs', 'ambulances', 'appts', 'feedback', 'alerts'];
+  function applyDelta(st, d) {
+    if (!d) return st;
+    if (d.meta) Object.assign(st, d.meta);
+    (d.visits || []).forEach(v => { if (v._removed) delete st.visits[v.id]; else st.visits[v.id] = v; });
+    (d.patients || []).forEach(p => { st.patients[p.pid] = p; });
+    LISTS.forEach(k => (d[k] || []).forEach(item => {
+      const i = st[k].findIndex(x => x.id === item.id);
+      if (item._removed) { if (i >= 0) st[k].splice(i, 1); } else if (i >= 0) st[k][i] = item; else st[k].unshift(item);
+    }));
+    if (d.audit && d.audit.length) st.audit = d.audit.concat(st.audit).slice(0, 200);
+    if (d.v != null) st.v = d.v;
+    return st;
+  }
+
+  /* ------------------------------------------------------------------ *
+   * Engine
+   * ------------------------------------------------------------------ */
+  function createEngine(state, opts = {}) {
+    const st = state;
+    const rng = opts.rng || Math.random;
+    const genKey = opts.genKey || (() => Math.floor(rng() * 36 ** 8).toString(36).padStart(8, '0'));
+    let dirty = freshDirty();
+    const breach = {};
+    function freshDirty() { return { meta: false, visits: new Set(), patients: new Set(), audit: [], ...Object.fromEntries(LISTS.map(k => [k, new Set()])) }; }
+    const touch = (k, id) => dirty[k].add(id);
+    const touchMeta = () => { dirty.meta = true; };
+
+    function audit(actor, action, text, now) {
+      const e = { t: now, who: actor.name || ROLES[actor.role] || 'Unknown', role: actor.role, action, text };
+      st.audit.unshift(e); if (st.audit.length > 200) st.audit.pop();
+      dirty.audit.push(e);
+    }
+    function alert(level, title, body, view, now) {
+      const a = { id: 'AL' + (st.counters.alert++), t: now, level, title, body, view, read: false };
+      st.alerts.unshift(a); if (st.alerts.length > 80) { const old = st.alerts.pop(); touch('alerts', old.id); old._removed = true; }
+      touch('alerts', a.id); touchMeta(); return a;
+    }
+    function ensureDay(now) {
+      const k = dayKey(now);
+      if (st.counters.day === k) return;
+      st.counters.day = k; st.counters.tok = {};
+      // Yesterday's unfinished visits close as no-shows and leave memory once persisted.
+      visitsList(st).forEach(v => {
+        if (v.day !== k) { if (v.status === 'waiting' || v.status === 'serving') { v.status = 'noshow'; v.outcome = v.outcome || 'Closed at day end'; } v._removed = true; touch('visits', v.id); }
+      });
+      st.serving = {}; st.lastCalls = []; st.recall = null;
+      ensureSlots(now); touchMeta();
+    }
+    function ensureSlots(now) {
+      const k = dayKey(now);
+      opdDepts(st).forEach(d => {
+        for (let m = 9 * 60; m < 13 * 60; m += 15) {
+          const id = k + '-' + d.id + '-' + pad(Math.floor(m / 60)) + pad(m % 60);
+          if (!st.appts.find(a => a.id === id)) { const a = { id, day: k, dept: d.id, t: atMinute(now, m), status: 'open', name: null, phone: null, visitId: null }; st.appts.push(a); touch('appts', a.id); }
+        }
+      });
+      // keep only today and later in memory
+      st.appts = st.appts.filter(a => a.day >= k);
+    }
+    function findOrCreatePatient(p, now) {
+      const ph = digits(p.phone), ab = digits(p.abha);
+      let pt = null;
+      if (ab.length >= 14) pt = Object.values(st.patients).find(x => digits(x.abha) === ab);
+      if (!pt && ph.length >= 10) pt = Object.values(st.patients).find(x => digits(x.phone).slice(-10) === ph.slice(-10) && x.name.toLowerCase() === p.name.toLowerCase());
+      if (!pt) { const pid = 'RC' + (++st.counters.patient); pt = { pid, name: p.name, phone: '', abha: '', age: null, sex: '', createdAt: now, visits: [] }; st.patients[pid] = pt; touchMeta(); }
+      if (p.phone) pt.phone = String(p.phone).slice(0, 20);
+      if (p.abha) pt.abha = String(p.abha).slice(0, 20);
+      if (p.age != null && p.age !== '') pt.age = p.age;
+      if (p.sex) pt.sex = p.sex;
+      touch('patients', pt.pid); return pt;
+    }
+    function freeSeat() {
+      const taken = new Set(visitsList(st).filter(v => v.status === 'waiting' && v.seat != null).map(v => v.seat));
+      const free = []; for (let i = 0; i < 120; i++) if (!taken.has(i)) free.push(i);
+      return free.length ? free[Math.floor(rng() * free.length)] : null;
+    }
+    function newVisit(d, pt, o, now) {
+      ensureDay(now);
+      st.counters.tok[d.id] = (st.counters.tok[d.id] || 100) + 1;
+      const tok = d.pre + '-' + st.counters.tok[d.id];
+      const v = {
+        id: st.counters.day + '-' + tok, day: st.counters.day, tok, dept: d.id, pid: pt.pid, name: pt.name,
+        esi: o.esi || null, pri: !!o.pri, appt: !!o.appt, lang: o.lang || 'en', src: o.src || 'Registered at desk',
+        arrived: now, status: 'waiting', start: null, end: null, outcome: null, lateOffset: 0, lateCount: 0,
+        seat: d.id === 'ER' ? null : freeSeat(), trackKey: genKey(), notified: {}, events: [{ t: now, x: o.src || 'Registered at desk' }]
+      };
+      st.visits[v.id] = v; pt.visits = (pt.visits || []).concat(v.id).slice(-50);
+      touch('visits', v.id); touch('patients', pt.pid); touchMeta();
+      return v;
+    }
+    function finish(v, outcome, now, actor) {
+      v.status = 'done'; v.end = now; v.outcome = outcome; v.events.push({ t: now, x: outcome });
+      touch('visits', v.id);
+      if (outcome === 'Admit' || (v.dept === 'ER' && v.esi && v.esi <= 2)) requestBed(v, now, actor);
+    }
+    function serve(id, specific, outcome, now, actor) {
+      const d = dept(st, id);
+      const curId = st.serving[id], cur = curId && st.visits[curId];
+      if (cur && cur.status === 'serving') finish(cur, outcome || 'Consult complete', now, actor);
+      const nx = specific || waiting(st, id)[0];
+      if (nx) {
+        nx.status = 'serving'; nx.start = now; nx.seat = null; nx.events.push({ t: now, x: 'Called to ' + d.room });
+        st.serving[id] = nx.id; touch('visits', nx.id);
+        st.lastCalls.unshift({ tok: nx.tok, room: d.room, dept: id, t: now, lang: nx.lang }); st.lastCalls = st.lastCalls.slice(0, 8);
+      } else st.serving[id] = null;
+      touchMeta();
+      return nx || null;
+    }
+    function requestBed(v, now) {
+      if (st.bedReqs.find(r => r.visitId === v.id && r.status === 'open')) return;
+      const pt = st.patients[v.pid];
+      const ward = v.esi === 1 ? 'ICU' : ((pt && pt.age != null && pt.age < 14) || v.dept === 'PED') ? 'PW' : 'GW';
+      const r = { id: 'BR-' + (st.counters.req++), visitId: v.id, tok: v.tok, pid: v.pid, name: v.name, ward, from: dept(st, v.dept).name, esi: v.esi, at: now, status: 'open', bed: null };
+      st.bedReqs.unshift(r); touch('bedReqs', r.id); touchMeta();
+      alert('warn', 'Bed requested', `${v.name} (${v.tok}) needs a ${st.wardNames[ward]} bed.`, 'beds', now);
+    }
+    function visitOr404(id) { const v = st.visits[id]; if (!v) fail('not_found', 'Visit not found'); return v; }
+    function deptOr404(id) { const d = dept(st, id); if (!d) fail('not_found', 'Department not found'); return d; }
+    const langOk = l => (st.hospital.langs.includes(l) ? l : 'en');
+
+    const handlers = {
+      registerPatient(p, actor, now) {
+        const name = str(p.name, 'Name', { required: true, max: 80 });
+        const d = deptOr404(p.dept);
+        if (d.id === 'ER') fail('invalid', 'Use triage for emergency patients');
+        if (!d.open) fail('closed', `${d.name} is closed right now`);
+        const pt = findOrCreatePatient({ name, phone: str(p.phone, 'Phone', { max: 20 }), abha: str(p.abha, 'ABHA', { max: 20 }), age: p.age === '' || p.age == null ? null : num(p.age, 'Age', { min: 0, max: 125 }), sex: str(p.sex, 'Sex', { max: 10 }) }, now);
+        if (visitsList(st).some(v => v.pid === pt.pid && v.dept === d.id && (v.status === 'waiting' || v.status === 'serving'))) fail('duplicate', `${name} is already in the ${d.name} queue`);
+        const v = newVisit(d, pt, { pri: !!p.priority, appt: !!p.appt, lang: langOk(p.lang), src: str(p.source, 'Source', { max: 60 }) || 'Registered at desk' }, now);
+        const e = eta(st, v.id, now);
+        audit(actor, 'registerPatient', `Registered ${name} as ${v.tok} in ${d.name}`, now);
+        return { id: v.id, tok: v.tok, trackKey: v.trackKey, position: e.pos, etaMin: e.mins, room: d.room };
+      },
+      callNext(p, actor, now) {
+        const d = deptOr404(p.dept);
+        const v = serve(d.id, null, p.outcome, now, actor);
+        audit(actor, 'callNext', v ? `Called ${v.tok} to ${d.room}` : `Called next in ${d.name}: queue empty`, now);
+        return { called: v ? v.tok : null, id: v ? v.id : null, room: d.room };
+      },
+      callVisit(p, actor, now) {
+        const v = visitOr404(p.id);
+        if (v.status !== 'waiting') fail('invalid', `${v.tok} is not waiting`);
+        serve(v.dept, v, null, now, actor);
+        audit(actor, 'callVisit', `Called ${v.tok} out of order`, now);
+        return { called: v.tok };
+      },
+      completeVisit(p, actor, now) {
+        const d = deptOr404(p.dept);
+        const cur = st.serving[d.id] && st.visits[st.serving[d.id]];
+        if (!cur || cur.status !== 'serving') fail('invalid', 'No patient in consult');
+        let outcome = p.outcome;
+        let referred = null;
+        if (p.referTo) {
+          const to = deptOr404(p.referTo); if (to.id === 'ER' || to.id === d.id) fail('invalid', 'Choose another OPD department');
+          outcome = 'Referred to ' + to.name;
+          const pt = st.patients[cur.pid];
+          referred = newVisit(to, pt, { pri: true, lang: cur.lang, src: 'Referred from ' + d.name }, now);
+        } else if (!OUTCOMES.includes(outcome) && outcome !== 'Consult complete') fail('invalid', 'Unknown outcome');
+        finish(cur, outcome, now, actor); st.serving[d.id] = null; touchMeta();
+        audit(actor, 'completeVisit', `${cur.tok}: ${outcome}${referred ? ' as ' + referred.tok : ''}`, now);
+        let next = null;
+        if (p.callNext) { next = serve(d.id, null, null, now, actor); if (next) audit(actor, 'callNext', `Called ${next.tok} to ${d.room}`, now); }
+        return { completed: cur.tok, outcome, referred: referred && referred.tok, next: next && next.tok };
+      },
+      markNoShow(p, actor, now) {
+        const v = visitOr404(p.id);
+        if (v.status !== 'waiting') fail('invalid', `${v.tok} is not waiting`);
+        v.status = 'noshow'; v.outcome = 'No-show'; v.end = now; v.seat = null; v.events.push({ t: now, x: 'Marked no-show' });
+        touch('visits', v.id); audit(actor, 'markNoShow', `Marked ${v.tok} as no-show`, now);
+        return { tok: v.tok };
+      },
+      recall(p, actor, now) {
+        const d = deptOr404(p.dept);
+        const v = st.serving[d.id] && st.visits[st.serving[d.id]];
+        if (!v) fail('invalid', 'No one to recall');
+        st.recall = { dept: d.id, tok: v.tok, room: d.room, lang: v.lang, t: now }; touchMeta();
+        audit(actor, 'recall', `Recalled ${v.tok} to ${d.room}`, now);
+        return { tok: v.tok };
+      },
+      runningLate(p, actor, now) {
+        const v = visitOr404(p.id);
+        if (v.status !== 'waiting') fail('invalid', 'Only waiting patients can use this');
+        if (v.lateCount >= MAX_LATE) fail('limit', 'Running late can be used twice per visit');
+        const list = waiting(st, v.dept), i = list.indexOf(v), target = list[Math.min(list.length - 1, i + 3)];
+        if (target && target !== v) v.lateOffset = (target.arrived + (target.lateOffset || 0)) - v.arrived + 1000;
+        v.lateCount++; v.events.push({ t: now, x: 'Running late: moved back 3 places' }); touch('visits', v.id);
+        audit(actor, 'runningLate', `${v.tok} is running late`, now);
+        return eta(st, v.id, now);
+      },
+      triage(p, actor, now) {
+        const name = str(p.name, 'Name', { max: 80 }) || 'Unknown patient';
+        if (p.complaint && !COMPLAINTS[p.complaint]) fail('invalid', 'Unknown complaint');
+        const t = triage(p);
+        const pt = findOrCreatePatient({ name, age: p.age === '' || p.age == null ? null : num(p.age, 'Age', { min: 0, max: 125 }), sex: str(p.sex, 'Sex', { max: 10 }) }, now);
+        const v = newVisit(dept(st, 'ER'), pt, { esi: t.level, lang: langOk(p.lang), src: p.source || `Triaged ESI ${t.level} (${COMPLAINTS[p.complaint] || 'unspecified'})` }, now);
+        v.triage = { complaint: p.complaint || null, spo2: p.spo2 || null, hr: p.hr || null, bp: p.bp || null, avpu: p.avpu || 'A', pain: p.pain || 0, reasons: t.reasons };
+        if (t.level <= 2) alert('crit', `ESI ${t.level} in Emergency`, `${v.tok} ${name}: ${t.reasons.join(', ')}.`, 'er', now);
+        audit(actor, 'triage', `Triaged ${v.tok} at ESI ${t.level}`, now);
+        return { id: v.id, tok: v.tok, level: t.level, reasons: t.reasons };
+      },
+      overrideEsi(p, actor, now) {
+        const v = visitOr404(p.id); if (v.dept !== 'ER') fail('invalid', 'Only emergency visits have ESI');
+        const esi = num(p.esi, 'ESI', { min: 1, max: 5 }); const reason = str(p.reason, 'Reason', { required: true, max: 200 });
+        const old = v.esi; v.esi = esi; v.events.push({ t: now, x: `ESI changed ${old} → ${esi}: ${reason}` }); touch('visits', v.id);
+        audit(actor, 'overrideEsi', `${v.tok} ESI ${old} → ${esi} (${reason})`, now);
+        return { tok: v.tok, esi };
+      },
+      ambulancePreAlert(p, actor, now) {
+        const a = { id: 'AMB-' + (st.counters.amb++), from: str(p.from, 'From', { required: true, max: 60 }), complaint: str(p.complaint, 'Complaint', { required: true, max: 120 }), esi: num(p.esi, 'ESI', { min: 1, max: 5 }), arriveAt: now + num(p.etaMin, 'ETA', { min: 1, max: 240 }) * MIN, prepared: false, status: 'inbound', at: now };
+        st.ambulances.unshift(a); touch('ambulances', a.id); touchMeta();
+        alert('crit', 'Ambulance inbound', `${a.id}: ${a.complaint}. ETA ${mins(now, a.arriveAt)} min.`, 'er', now);
+        audit(actor, 'ambulancePreAlert', `${a.id} pre-alert from ${a.from}`, now);
+        return { id: a.id };
+      },
+      prepareBay(p, actor, now) {
+        const a = st.ambulances.find(x => x.id === p.id && x.status === 'inbound'); if (!a) fail('not_found', 'Ambulance not found');
+        a.prepared = true; touch('ambulances', a.id); audit(actor, 'prepareBay', `Resus bay prepared for ${a.id}`, now);
+        return { id: a.id };
+      },
+      assignBed(p, actor, now) {
+        const r = p.reqId ? st.bedReqs.find(x => x.id === p.reqId && x.status === 'open') : openBedReqs(st).slice(-1)[0];
+        if (!r) fail('not_found', 'No pending admission');
+        let b;
+        if (p.bedId) { b = st.beds.find(x => x.id === p.bedId); if (!b || b.status !== 'free') fail('invalid', 'That bed is not free'); }
+        else b = st.beds.find(x => x.ward === r.ward && x.status === 'free') || st.beds.find(x => x.ward === 'GW' && x.status === 'free');
+        if (!b) fail('no_bed', `No free ${st.wardNames[r.ward]} bed`);
+        b.status = 'occupied'; b.pid = r.pid; b.name = r.name; b.since = now; touch('beds', b.id);
+        r.status = 'assigned'; r.bed = b.id; touch('bedReqs', r.id);
+        const v = st.visits[r.visitId]; if (v) { v.events.push({ t: now, x: `Admitted to ${b.id}, ${st.wardNames[b.ward]}` }); touch('visits', v.id); }
+        audit(actor, 'assignBed', `Assigned ${b.id} to ${r.name}`, now);
+        return { bed: b.id, ward: st.wardNames[b.ward], patient: r.name };
+      },
+      dischargeBed(p, actor, now) {
+        const b = st.beds.find(x => x.id === p.bedId); if (!b || b.status !== 'occupied') fail('invalid', 'Bed is not occupied');
+        const who = b.name; b.status = 'cleaning'; b.since = now; b.name = null; b.pid = null; touch('beds', b.id);
+        audit(actor, 'dischargeBed', `Discharged ${who || 'patient'} from ${b.id}`, now);
+        return { bed: b.id };
+      },
+      markBedReady(p, actor, now) {
+        const b = st.beds.find(x => x.id === p.bedId); if (!b || b.status !== 'cleaning') fail('invalid', 'Bed is not being cleaned');
+        b.status = 'free'; b.since = now; touch('beds', b.id); audit(actor, 'markBedReady', `${b.id} cleaned and ready`, now);
+        return { bed: b.id };
+      },
+      bookAppointment(p, actor, now) {
+        const a = st.appts.find(x => x.id === p.slotId); if (!a) fail('not_found', 'Slot not found');
+        if (a.status !== 'open') fail('invalid', 'Slot is already taken');
+        if (a.t + 15 * MIN < now) fail('invalid', 'Slot is in the past');
+        a.name = str(p.name, 'Name', { required: true, max: 80 }); a.phone = str(p.phone, 'Phone', { max: 20 }); a.status = 'booked'; touch('appts', a.id);
+        audit(actor, 'bookAppointment', `Booked ${a.name} with ${dept(st, a.dept).doc} at ${hhmm(a.t)}`, now);
+        return { slotId: a.id };
+      },
+      checkInAppointment(p, actor, now) {
+        const a = st.appts.find(x => x.id === p.slotId); if (!a || a.status !== 'booked') fail('invalid', 'Appointment is not booked');
+        const r = handlers.registerPatient({ name: a.name, phone: a.phone, dept: a.dept, appt: true, source: 'Checked in for ' + hhmm(a.t) + ' appointment' }, actor, now);
+        a.status = 'checked'; a.visitId = r.id; touch('appts', a.id);
+        return r;
+      },
+      submitFeedback(p, actor, now) {
+        const v = visitOr404(p.id); if (v.status !== 'done') fail('invalid', 'Feedback opens after the visit');
+        const stars = num(p.stars, 'Stars', { min: 1, max: 5 });
+        let f = st.feedback.find(x => x.visitId === v.id);
+        if (f) { f.stars = stars; f.text = str(p.text, 'Comment', { max: 300 }) || f.text; }
+        else { f = { id: 'FB' + (st.counters.fb++), visitId: v.id, tok: v.tok, dept: v.dept, stars, text: str(p.text, 'Comment', { max: 300 }), t: now }; st.feedback.unshift(f); if (st.feedback.length > 500) st.feedback.pop(); touchMeta(); }
+        touch('feedback', f.id);
+        return { stars };
+      },
+      updateSettings(p, actor, now) {
+        const h = st.hospital;
+        if (p.name != null) h.name = str(p.name, 'Hospital name', { required: true, max: 80 });
+        if (p.city != null) h.city = str(p.city, 'City', { max: 60 });
+        if (p.sla) { const busy = num(p.sla.busy, 'Busy threshold', { min: 5, max: 120 }), over = num(p.sla.over, 'SLA threshold', { min: 10, max: 240 }); if (over <= busy) fail('invalid', 'SLA threshold must be above the busy threshold'); h.sla = { busy, over }; }
+        if (p.langs) { const l = p.langs.filter(x => LANGS[x]); if (!l.includes('en')) l.unshift('en'); h.langs = l; }
+        if (p.publicCheckin != null) h.publicCheckin = !!p.publicCheckin;
+        touchMeta(); audit(actor, 'updateSettings', 'Updated hospital settings', now);
+        return { hospital: h };
+      },
+      updateDepartment(p, actor, now) {
+        const d = deptOr404(p.id);
+        if (p.avg != null) d.avg = num(p.avg, 'Average consult', { min: 2, max: 60 });
+        if (p.open != null) { if (d.id === 'ER' && !p.open) fail('invalid', 'Emergency cannot be closed'); d.open = !!p.open; }
+        if (p.doc != null) d.doc = str(p.doc, 'Doctor', { required: true, max: 60 });
+        if (p.room != null) d.room = str(p.room, 'Room', { required: true, max: 30 });
+        touchMeta(); audit(actor, 'updateDepartment', `Updated ${d.name}`, now);
+        return { dept: d };
+      },
+      addDepartment(p, actor, now) {
+        const id = str(p.id, 'Code', { required: true, max: 4 }).toUpperCase();
+        if (dept(st, id)) fail('duplicate', 'Department already exists');
+        const t = TEMPLATES[id] || {};
+        const name = str(p.name || t.name, 'Name', { required: true, max: 60 });
+        const used = new Set(st.depts.map(d => d.pre));
+        let pre = (p.pre || t.pre || name[0]).toUpperCase(); if (used.has(pre)) pre = 'ABCDFHJKLMQRSVXZ'.split('').find(c => !used.has(c));
+        const d = { id, name, pre, avg: num(p.avg || t.avg || 8, 'Average consult', { min: 2, max: 60 }), color: t.color || '#64748B', room: str(p.room, 'Room', { required: true, max: 30 }), doc: str(p.doc, 'Doctor', { required: true, max: 60 }), floor: str(p.floor, 'Directions', { max: 80 }) || 'Ground floor', open: true, rooms: 1 };
+        st.depts.splice(st.depts.length - 1, 0, d); ensureSlots(now); touchMeta();
+        audit(actor, 'addDepartment', `Added ${name}`, now);
+        return { dept: d };
+      },
+      codeBlue(p, actor, now) {
+        st.codeBlue = { location: str(p.location, 'Location', { max: 60 }) || 'Emergency', t: now, by: actor.name }; touchMeta();
+        alert('crit', 'Code Blue', `Code Blue at ${st.codeBlue.location}.`, 'er', now);
+        audit(actor, 'codeBlue', `Code Blue called at ${st.codeBlue.location}`, now);
+        return st.codeBlue;
+      },
+      clearCodeBlue(p, actor, now) {
+        if (!st.codeBlue) return { cleared: false };
+        st.codeBlue = null; touchMeta(); audit(actor, 'clearCodeBlue', 'Code Blue cleared', now);
+        return { cleared: true };
+      },
+      ackAlerts(p) {
+        st.alerts.forEach(a => { if (!a.read && (!p.id || a.id === p.id)) { a.read = true; touch('alerts', a.id); } });
+        return { ok: true };
+      },
+      markNotified(p) {
+        const v = visitOr404(p.id); v.notified = { ...(v.notified || {}), [p.kind]: true }; touch('visits', v.id); return { ok: true };
+      }
+    };
+
+    function dispatch(name, payload, actor, now) {
+      const h = handlers[name];
+      if (!h || !COMMANDS[name]) fail('unknown_command', `Unknown command: ${name}`);
+      actor = actor || { role: 'system', name: 'System' };
+      if (!COMMANDS[name].includes(actor.role)) fail('forbidden', `${ROLES[actor.role] || actor.role} cannot ${name}`);
+      if (typeof now !== 'number') now = Date.now();
+      ensureDay(now);
+      return h(payload || {}, actor, now);
+    }
+
+    /* Time-based maintenance. Call every few seconds. */
+    function tick(now) {
+      ensureDay(now);
+      const sys = { role: 'system', name: 'System' };
+      inboundAmbulances(st).filter(a => a.arriveAt <= now).forEach(a => {
+        a.status = 'arrived'; touch('ambulances', a.id);
+        const pt = findOrCreatePatient({ name: 'Unknown (' + a.id + ')' }, now);
+        const v = newVisit(dept(st, 'ER'), pt, { esi: a.esi, src: 'Arrived by ' + a.id + ' from ' + a.from }, now);
+        alert('crit', `${a.id} arrived`, `${v.tok} placed at ESI ${a.esi}.`, 'er', now);
+        audit(sys, 'ambulanceArrived', `${a.id} arrived as ${v.tok}`, now);
+      });
+      st.beds.forEach(b => { if (b.status === 'cleaning' && now - b.since >= CLEANING_MIN * MIN) { b.status = 'free'; b.since = now; touch('beds', b.id); } });
+      st.appts.forEach(a => { if (a.status === 'booked' && now > a.t + 20 * MIN) { a.status = 'noshow'; touch('appts', a.id); } });
+      opdDepts(st).forEach(d => {
+        if (!d.open) return;
+        const w = newWait(st, d.id, now);
+        if (w > st.hospital.sla.over && !breach[d.id]) { breach[d.id] = true; alert('warn', `${d.name} over SLA`, `New arrivals now wait about ${w} min. Consider opening a second room.`, 'overview', now); }
+        else if (w < st.hospital.sla.busy) breach[d.id] = false;
+      });
+      if (st.recall && now - st.recall.t > 2 * MIN) { st.recall = null; touchMeta(); }
+      return hasChanges();
+    }
+
+    function hasChanges() { return dirty.meta || dirty.audit.length || dirty.visits.size || dirty.patients.size || LISTS.some(k => dirty[k].size); }
+    function takeDelta(now) {
+      if (!hasChanges()) return null;
+      st.v++;
+      const d = { v: st.v, now };
+      if (dirty.meta) d.meta = { hospital: st.hospital, depts: st.depts, counters: st.counters, serving: st.serving, recall: st.recall, codeBlue: st.codeBlue, lastCalls: st.lastCalls, wardNames: st.wardNames };
+      if (dirty.visits.size) d.visits = [...dirty.visits].map(id => st.visits[id] || { id, _removed: true });
+      [...dirty.visits].forEach(id => { const v = st.visits[id]; if (v && v._removed) delete st.visits[id]; });
+      if (dirty.patients.size) d.patients = [...dirty.patients].map(id => st.patients[id]).filter(Boolean);
+      LISTS.forEach(k => { if (dirty[k].size) d[k] = [...dirty[k]].map(id => st[k].find(x => x.id === id) || { id, _removed: true }); });
+      if (dirty.audit.length) d.audit = dirty.audit.slice();
+      dirty = freshDirty();
+      return d;
+    }
+
+    return { state: st, dispatch, tick, takeDelta, hasChanges, ensureSlots: now => ensureSlots(now) };
+  }
+
+  function can(role, command) { return !!(COMMANDS[command] && COMMANDS[command].includes(role)); }
+
+  return {
+    VERSION, MIN, TEMPLATES, ER, WARD_TYPES, LANGS, OUTCOMES, ESI_LABEL, COMPLAINTS, COMMANDS, ROLES, PROFILE,
+    EngineError, createState, createEngine, applyDelta, can,
+    dept, opdDepts, waiting, pace, remaining, newWait, eta, slaStatus, occupancy, openBedReqs, inboundAmbulances,
+    todayVisits, stats, suggestion, triage, board, snapshot, sortKey,
+    dayKey, startOfDay, atMinute, hourOf, mins, hhmm, clock12, maskPhone, median
+  };
+});
+
+</script>
+<script>
+/*!
+ * RayCare demo simulator — generates a realistic hospital day on top of the
+ * engine. Used by the offline browser demo and by `npm run demo`.
+ * It only ever talks to the engine through `dispatch`, exactly like staff do.
+ */
+(function (root, factory) {
+  if (typeof module === 'object' && module.exports) module.exports = factory(require('./engine.js'));
+  else root.RayCareSimulator = factory(root.RayCareEngine);
+})(typeof globalThis !== 'undefined' ? globalThis : this, function (E) {
+  'use strict';
+  const MIN = E.MIN;
+  const FIRST = ['Lakshmi', 'Arjun', 'Fatima', 'Ravi', 'Sneha', 'Imran', 'Priya', 'Vikram', 'Anjali', 'Kiran', 'Meena', 'Suresh', 'Ayesha', 'Rahul', 'Divya', 'Mohan', 'Nazia', 'Harish', 'Swathi', 'Gopal', 'Zoya', 'Venkat', 'Pooja', 'Abdul', 'Keerthi', 'Naveen', 'Rekha', 'Salim', 'Bhavya', 'Tarun', 'Hema', 'Faisal'];
+  const LAST = ['Kumar', 'Reddy', 'Shaik', 'Rao', 'Naidu', 'Khan', 'Sharma', 'Varma', 'Iyer', 'Gupta', 'Patel', 'Das', 'Menon', 'Pillai', 'Joshi', 'Ali'];
+  const COMMENTS = {
+    5: ['Knew exactly when to walk in. No crowding.', 'The SMS in Telugu helped my mother a lot.', 'Waited in the canteen and came back on time.', 'Very smooth visit.'],
+    4: ['Clear directions to the room.', 'Estimate was close. Good system.', 'Registration was quick.'],
+    3: ['Estimate was a bit off but okay.', 'Consult took longer than shown.'],
+    2: ['Waited longer than the estimate.', 'Too crowded near the cardiology room.'],
+    1: ['Called while I was at the pharmacy.']
+  };
+
+  const DEMO_CONFIG = {
+    hospital: { name: 'Sunrise Multispeciality', city: 'Hyderabad', langs: ['en', 'hi', 'te'], setupComplete: true },
+    depts: [
+      { id: 'GEN', room: 'OPD 1', doc: 'Dr. Pranav Reddy', floor: 'Ground floor, left of registration' },
+      { id: 'PED', room: 'OPD 3', doc: 'Dr. Farah Khan', floor: 'Ground floor, follow the purple line' },
+      { id: 'CAR', room: 'OPD 4', doc: 'Dr. Anil Rao', floor: 'Ground floor, follow the pink line' },
+      { id: 'DER', room: 'OPD 5', doc: 'Dr. Kavya Iyer', floor: 'Ground floor, next to the lab' },
+      { id: 'ORT', room: 'OPD 6', doc: 'Dr. Sunil Menon', floor: 'Ground floor, end of the corridor' }
+    ],
+    wards: [{ id: 'ICU', count: 8 }, { id: 'GW', count: 16 }, { id: 'PW', count: 10 }]
+  };
+
+  function createSimulator(engine, rng) {
+    rng = rng || Math.random;
+    const st = engine.state;
+    const pick = a => a[Math.floor(rng() * a.length)];
+    const name = () => pick(FIRST) + ' ' + pick(LAST);
+    const phone = () => '9' + String(Math.floor(rng() * 1e9)).padStart(9, '0');
+    const desk = { role: 'desk', name: 'Salma (Front desk)' };
+    const nurse = { role: 'nurse', name: 'Joseph (ER nurse)' };
+    const dur = {};
+    const manual = new Set(); // rooms a human is driving in the demo
+    const run = (cmd, p, actor, now) => { try { return engine.dispatch(cmd, p, actor, now); } catch (e) { return null; } };
+
+    function step(now) {
+      // Doctors finish and call.
+      st.depts.forEach(d => {
+        if (!d.open || manual.has(d.id)) return;
+        const doc = { role: 'doctor', name: d.doc };
+        const curId = st.serving[d.id], cur = curId && st.visits[curId];
+        if (cur && cur.status === 'serving') {
+          if (!dur[cur.id]) dur[cur.id] = E.pace(st, d.id, now) * (0.6 + rng() * 0.8);
+          if (now - cur.start >= dur[cur.id] * MIN) {
+            const outcome = d.id === 'ER' ? pick(['Discharged home', 'Admit', 'Imaging ordered', 'Discharged home']) : pick(['Prescription issued', 'Prescription issued', 'Lab tests ordered', 'Follow-up in 2 weeks', 'Imaging ordered', 'Discharged home', rng() < 0.08 ? 'Admit' : 'Prescription issued']);
+            run('completeVisit', { dept: d.id, outcome, callNext: true }, d.id === 'ER' ? { role: 'doctor', name: 'ER team' } : doc, now);
+            if (d.id !== 'ER' && rng() < 0.55) {
+              const w = (cur.start - cur.arrived) / MIN;
+              const stars = w < 20 ? pick([5, 5, 5, 4]) : w < 40 ? pick([4, 4, 5, 3]) : pick([3, 2, 4, 3]);
+              run('submitFeedback', { id: cur.id, stars, text: pick(COMMENTS[stars]) }, { role: 'patient', name: 'Patient' }, now);
+            }
+          }
+        } else if (E.waiting(st, d.id).length) run('callNext', { dept: d.id }, d.id === 'ER' ? nurse : doc, now);
+      });
+      // Walk-ins.
+      const hr = new Date(now).getHours();
+      const busy = (E.PROFILE[hr] || 0.2);
+      if (rng() < 0.6 * busy + 0.03) {
+        const W = { GEN: 2.3, PED: 1.9, CAR: 0.6, DER: 1.1, ORT: 1.3 };
+        const weights = E.opdDepts(st).filter(d => d.open).map(d => [d.id, W[d.id] || 1.2]);
+        const tot = weights.reduce((a, b) => a + b[1], 0); let r = rng() * tot, id = weights[0] && weights[0][0];
+        for (const [k, w] of weights) { if ((r -= w) <= 0) { id = k; break; } }
+        if (id && E.waiting(st, id).length < 14) run('registerPatient', { name: name(), phone: phone(), age: 2 + Math.floor(rng() * 75), sex: pick(['F', 'M']), dept: id, lang: pick(['en', 'en', 'hi', 'te']), priority: rng() < 0.1, source: pick(['Checked in by QR', 'Checked in at kiosk', 'Registered at desk']) }, desk, now);
+      }
+      // Emergency walk-ins and ambulances.
+      if (rng() < 0.05 && E.waiting(st, 'ER').length < 5) {
+        const c = pick(['fever', 'minor', 'abdo', 'trauma', 'chest', 'rx', 'fever']);
+        run('triage', { name: name(), age: 5 + Math.floor(rng() * 70), complaint: c, spo2: 90 + Math.floor(rng() * 10), hr: 70 + Math.floor(rng() * 55), bp: 100 + Math.floor(rng() * 70), avpu: 'A', pain: Math.floor(rng() * 9) }, nurse, now);
+      }
+      if (rng() < 0.03 && E.inboundAmbulances(st).length < 2) {
+        const c = pick([['Road traffic accident, 2 injured', 2], ['Chest pain, 64 M', 2], ['Unconscious, 51 F', 1], ['Fall from height, 30 M', 2], ['Breathing difficulty, 7 F', 2], ['Burns, 40 M', 2]]);
+        run('ambulancePreAlert', { from: pick(['108 · Gachibowli', '108 · Kukatpally', 'Private · Madhapur', '108 · LB Nagar']), complaint: c[0], esi: c[1], etaMin: 6 + Math.floor(rng() * 10) }, { role: 'system', name: '108 dispatch' }, now);
+      }
+      // Appointments arriving near their slot.
+      st.appts.forEach(a => { if (a.status === 'booked' && now >= a.t - 10 * MIN && now <= a.t + 10 * MIN && rng() < 0.35) run('checkInAppointment', { slotId: a.id }, desk, now); });
+      // Wards.
+      if (rng() < 0.2 && E.openBedReqs(st).length) run('assignBed', {}, nurse, now);
+      if (rng() < 0.03) { const b = st.beds.filter(x => x.status === 'occupied'); if (b.length) run('dischargeBed', { bedId: pick(b).id }, nurse, now); }
+      engine.tick(now);
+    }
+
+    /* Fill the day so far so the demo opens mid-shift. */
+    function fastForward(from, to) {
+      for (let t = from; t <= to; t += 2 * MIN) step(t);
+    }
+    return { step, fastForward, manual };
+  }
+
+  /* Build a ready-to-run demo hospital at `now`. */
+  function createDemo(now, rng) {
+    rng = rng || Math.random;
+    const state = E.createState(DEMO_CONFIG);
+    state.hospital.createdAt = now;
+    const engine = E.createEngine(state, { rng });
+    engine.ensureSlots(now);
+    const pick = a => a[Math.floor(rng() * a.length)];
+    // Wards start mostly full, as they would mid-morning.
+    state.beds.forEach(b => {
+      const r = rng();
+      if (r < 0.72) { b.status = 'occupied'; b.name = pick(FIRST) + ' ' + pick(LAST); b.since = now - Math.floor(rng() * 72) * 60 * MIN; }
+      else if (r < 0.8) { b.status = 'cleaning'; b.since = now - Math.floor(rng() * 15) * MIN; }
+    });
+    // About 60% of appointment slots are booked in advance.
+    const desk = { role: 'desk', name: 'Online booking' };
+    const early = E.atMinute(now, 7 * 60);
+    state.appts.forEach(a => { if (rng() < 0.6) { try { engine.dispatch('bookAppointment', { slotId: a.id, name: pick(FIRST) + ' ' + pick(LAST), phone: '9' + String(Math.floor(rng() * 1e9)).padStart(9, '0') }, desk, early); } catch (e) { /* ignore */ } } });
+    const sim = createSimulator(engine, rng);
+    const start = E.atMinute(now, 8 * 60);
+    if (now > start) sim.fastForward(start, now);
+    // Keep the history but start the demo with a clean alert tray.
+    state.alerts.forEach((a, i) => { if (i > 4) a.read = true; });
+    engine.takeDelta(now);
+    return { state, engine, sim };
+  }
+
+  return { createSimulator, createDemo, DEMO_CONFIG };
+});
+
+</script>
+<script>
+(function () {
+  'use strict';
+  const E = window.RayCareEngine, $ = s => document.querySelector(s);
+  const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const LANG = { en: ['Now serving', 'var(--f-body)'], hi: ['अब बारी है', '"Noto Sans Devanagari",system-ui'], te: ['ఇప్పుడు వంతు', '"Noto Sans Telugu",system-ui'], ta: ['இப்போது', 'system-ui'], kn: ['ಈಗ ಸರದಿ', 'system-ui'], ur: ['اب باری ہے', 'system-ui'] };
+  let board = null, li = 0, voice = false, lastCall = 0, lastRecall = 0, flash = null, serverNow = Date.now(), at = Date.now(), rate = 1;
+  const now = () => serverNow + (Date.now() - at) * rate;
+  function speak(tok, room, lang) {
+    if (!voice || !('speechSynthesis' in window)) return;
+    const t = String(tok).split('').join(' ');
+    const txt = lang === 'hi' ? `टोकन ${t}, कृपया ${room} में जाएँ।` : lang === 'te' ? `టోకెన్ ${t}, దయచేసి ${room} కి వెళ్ళండి.` : `Token ${t}, please proceed to ${room}.`;
+    try { const u = new SpeechSynthesisUtterance(txt); u.lang = { hi: 'hi-IN', te: 'te-IN' }[lang] || 'en-IN'; u.rate = .92; speechSynthesis.speak(u); } catch (e) { /* ignore */ }
+  }
+  function render() {
+    if (!board) return;
+    $('#hn').textContent = board.hospital; document.title = board.hospital + ' · Lobby';
+    $('#clk').textContent = E.clock12(now());
+    const c = board.lastCalls[0];
+    if (c && c.t > lastCall) { if (lastCall) { flash = c.dept; speak(c.tok, c.room, c.lang); } lastCall = c.t; }
+    if (board.recall && board.recall.t > lastRecall) { if (lastRecall) { flash = board.recall.dept; speak(board.recall.tok, board.recall.room, board.recall.lang); } lastRecall = board.recall.t; }
+    $('#grid').innerHTML = '<div class="h">Department</div><div class="h">Token</div><div class="h nxc">Next</div><div class="h" style="text-align:right">Wait</div>' + board.rows.map(r => `<div class="c dn"><span><i style="background:${r.color}"></i>${esc(r.name)}</span><small>${esc(r.room)}</small></div><div class="c"><span class="led ${flash === r.id ? 'flash' : ''}">${r.serving || '—'}</span></div><div class="c nx nxc">${r.next || '—'}</div><div class="c wt" style="${r.id === 'ER' ? 'color:#FF8A7E' : ''}">${r.id === 'ER' ? 'By triage' : '~' + r.wait + ' min'}</div>`).join('');
+    $('#foot').innerHTML = '<span class="lbl">RECENT CALLS</span>' + board.lastCalls.slice(0, 6).map(x => `<span class="call">${x.tok} → ${esc(x.room)}</span>`).join('');
+    flash = null;
+  }
+  setInterval(() => { const langs = (board && board.langs || ['en']).filter(l => LANG[l]); li = (li + 1) % langs.length; const L = LANG[langs[li]]; const el = $('#lang'); el.style.opacity = 0; setTimeout(() => { el.textContent = L[0]; el.style.fontFamily = L[1]; el.style.opacity = 1; }, 300); }, 4000);
+  setInterval(() => { $('#clk').textContent = E.clock12(now()); }, 1000);
+  $('#sound').addEventListener('click', () => { voice = !voice; $('#sound').textContent = voice ? 'Announcements on' : 'Turn on announcements'; if (voice) speak('R-1', 'the lobby', 'en'); });
+  document.addEventListener('dblclick', () => { try { document.documentElement.requestFullscreen().catch(() => {}); } catch (e) { /* ignore */ } });
+
+  async function start() {
+    try {
+      const h = location.protocol === 'file:' ? null : await fetch('/api/health', { cache: 'no-store' }).then(r => r.ok ? r.json() : null).catch(() => null);
+      if (h && h.ready) {
+        rate = h.clockRate || 1;
+        const es = new EventSource('/api/public/stream');
+        es.addEventListener('board', ev => { board = JSON.parse(ev.data); serverNow = board.now; at = Date.now(); render(); });
+        es.onerror = () => { $('#note').hidden = false; $('#note').textContent = 'Reconnecting…'; };
+        es.onopen = () => { $('#note').hidden = true; };
+        return;
+      }
+      if (h && !h.ready) { $('#note').hidden = false; $('#note').textContent = 'Finish the setup wizard in the staff app first.'; return; }
+    } catch (e) { /* fall through to demo */ }
+    // No server: run the demo hospital locally so the screen can be previewed.
+    let t = E.atMinute(Date.now(), 10 * 60 + 40); const d = window.RayCareSimulator.createDemo(t);
+    serverNow = t; at = Date.now(); rate = 0; board = E.board(d.state, t); render();
+    $('#note').hidden = false; $('#note').textContent = 'Demo data · connect to a RayCare server for your hospital';
+    setInterval(() => { t += 2 * E.MIN; d.sim.step(t); d.engine.takeDelta(t); serverNow = t; at = Date.now(); board = E.board(d.state, t); render(); }, 2600);
+  }
+  start();
+})();
+</script>
+</body>
+</html>
