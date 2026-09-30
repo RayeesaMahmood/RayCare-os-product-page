@@ -1,0 +1,24 @@
+{
+  "name": "raycare-os",
+  "version": "2.0.0",
+  "description": "RayCare OS — patient flow operating system for hospitals: live queues, ESI triage, beds, appointments, lobby displays and patient tracking.",
+  "private": true,
+  "license": "UNLICENSED",
+  "author": "Rayeesa Mahmood",
+  "main": "server/index.js",
+  "engines": {
+    "node": ">=22.5.0"
+  },
+  "scripts": {
+    "start": "node server/index.js",
+    "demo": "node server/index.js --demo",
+    "dev": "node --watch server/index.js --demo",
+    "test": "node --test --test-reporter=spec test/*.test.js",
+    "build:static": "node scripts/build-static.js",
+    "reset-admin": "node scripts/reset-admin.js",
+    "backup": "node scripts/backup.js"
+  },
+  "dependencies": {
+    "express": "4.22.3"
+  }
+}

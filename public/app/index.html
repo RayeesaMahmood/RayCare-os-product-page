@@ -1,0 +1,950 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>RayCare OS</title>
+<meta name="description" content="RayCare OS staff app: live queues, triage, beds and patient flow.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='9' fill='%231D4ED8'/%3E%3Cpath d='M8 22a12 12 0 0 1 16-11' stroke='%23FF8A45' stroke-width='3' fill='none' stroke-linecap='round'/%3E%3Ccircle cx='9' cy='22' r='2.4' fill='%23fff'/%3E%3Ccircle cx='16' cy='22' r='2.4' fill='%23fff'/%3E%3Ccircle cx='23' cy='22' r='2.4' fill='%23fff'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Figtree:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&family=Noto+Sans+Devanagari:wght@600&family=Noto+Sans+Telugu:wght@600&display=swap">
+<link rel="stylesheet" href="/assets/theme.css">
+<style>
+/* Layout: control-room rail + sticky topbar + routed workspace; drawers for detail; Copilot panel */
+html,body{min-height:100%}
+.app{display:grid;grid-template-columns:252px minmax(0,1fr);min-height:100dvh}
+.rail{background:var(--rail);color:var(--rail-text);position:sticky;top:0;height:100dvh;overflow-y:auto;display:flex;flex-direction:column;padding:16px 12px;gap:4px;z-index:30}
+.rail .brandmark{color:#fff;padding:6px 8px 14px}
+.rail .brandmark small{font:700 .62rem/1 var(--f-body);letter-spacing:.14em;color:var(--led);border:1px solid var(--rail-line);padding:3px 5px;border-radius:5px}
+.navgrp{font:700 .66rem/1 var(--f-body);letter-spacing:.14em;text-transform:uppercase;color:#5E6F9F;padding:14px 10px 6px}
+.navbtn{display:flex;align-items:center;gap:11px;width:100%;border:0;background:transparent;color:var(--rail-text);padding:9px 10px;border-radius:10px;font:600 .9rem/1.2 var(--f-body);cursor:pointer;text-align:left}
+.navbtn:hover{background:var(--rail-2);color:#fff}
+.navbtn[aria-current="page"]{background:var(--rail-2);color:#fff;box-shadow:inset 3px 0 0 var(--led)}
+.navbtn .badge{margin-left:auto;background:var(--crit);color:#fff;font:700 .68rem/1 var(--f-body);padding:4px 6px;border-radius:99px}
+.rail-foot{margin-top:auto;padding:14px 8px 4px;border-top:1px solid var(--rail-line);display:grid;gap:10px}
+.rail-foot label{font-size:.7rem;color:#6F80B6;letter-spacing:.08em;text-transform:uppercase;font-weight:700}
+.rail select{background:var(--rail-2);color:#fff;border:1px solid var(--rail-line);border-radius:9px;padding:9px 10px;font:600 .88rem var(--f-body);width:100%}
+.hosp{font-size:.8rem;line-height:1.35}.hosp b{color:#fff;display:block;font-size:.9rem}
+.who{display:flex;align-items:center;gap:10px}
+.avatar{width:34px;height:34px;border-radius:10px;background:var(--rail-2);display:grid;place-items:center;font:800 .8rem var(--f-display);color:#fff;flex:none}
+.rail .linkbtn{background:none;border:0;color:#8EA0D6;font:600 .78rem var(--f-body);cursor:pointer;padding:0;text-align:left}
+.topbar{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;display:flex;align-items:center;gap:12px;padding:10px 24px;background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:blur(10px) saturate(1.3);border-bottom:1px solid var(--line)}
+.crumb{display:grid;line-height:1.2;min-width:0}
+.crumb b{font:700 1.02rem var(--f-display);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.crumb span{font-size:.78rem;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tb-right{margin-left:auto;display:flex;align-items:center;gap:8px}
+.clock{display:flex;align-items:center;gap:8px;padding:6px 10px;border:1px solid var(--line);border-radius:10px;background:var(--surface);font-size:.82rem}
+.clock b{font:700 .95rem var(--f-mono)}
+.live-dot{width:8px;height:8px;border-radius:50%;background:var(--ok);box-shadow:0 0 0 3px color-mix(in srgb,var(--ok) 25%,transparent);animation:blink 1.6s infinite}
+.paused .live-dot{background:var(--muted);box-shadow:none;animation:none}
+.offline .live-dot{background:var(--crit);animation:none}
+@keyframes blink{50%{opacity:.35}}
+.iconbtn{position:relative;display:grid;place-items:center;width:38px;height:38px;border-radius:10px;border:1px solid var(--line);background:var(--surface);cursor:pointer;flex:none}
+.iconbtn .dot{position:absolute;top:5px;right:5px;min-width:16px;height:16px;border-radius:99px;background:var(--crit);color:#fff;font:700 .62rem/16px var(--f-body);padding:0 4px}
+.iconbtn.menubtn{display:none}
+.copilot-btn{display:flex;align-items:center;gap:8px;border:0;border-radius:10px;padding:9px 13px;background:linear-gradient(135deg,#1D4ED8,#6D28D9);color:#fff;font:700 .86rem var(--f-body);cursor:pointer}
+.copilot-btn kbd{font:600 .68rem var(--f-mono);background:rgba(255,255,255,.2);padding:2px 5px;border-radius:5px}
+.seg-mini{display:flex;border:1px solid var(--line);border-radius:9px;overflow:hidden;background:var(--surface)}
+.seg-mini button{border:0;background:transparent;padding:6px 9px;font:700 .75rem var(--f-mono);cursor:pointer;color:var(--muted)}
+.seg-mini button[aria-pressed="true"]{background:var(--brand-soft);color:var(--brand)}
+.demo-chip{font:700 .7rem var(--f-body);letter-spacing:.06em;text-transform:uppercase;color:var(--signal);background:var(--signal-soft);padding:6px 9px;border-radius:8px;white-space:nowrap}
+main{padding:24px;display:grid;gap:22px;align-content:start;min-width:0}
+.vhead{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap}
+.vhead p{color:var(--muted);max-width:72ch;margin-top:6px}
+.vactions{display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end}
+@media (max-width:1020px){
+  .app{grid-template-columns:1fr}
+  .rail{position:fixed;inset:0 auto 0 0;width:272px;transform:translateX(-100%);transition:transform .25s;box-shadow:0 0 60px rgba(0,0,0,.4)}
+  .rail.open{transform:none}
+  .iconbtn.menubtn{display:grid}
+  .topbar{padding:10px 16px}
+  main{padding:18px 16px}
+  .clock .lbl,.copilot-btn .t,.copilot-btn kbd{display:none}
+}
+@media (max-width:600px){.seg-mini,.demo-chip{display:none}}
+.scrim{position:fixed;inset:0;background:rgba(3,8,23,.45);z-index:25}
+
+.g2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:18px}
+.g3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px}
+.g-32{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);gap:18px}
+.g-23{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.5fr);gap:18px}
+@media (max-width:1150px){.g-32,.g-23,.g3{grid-template-columns:1fr}}
+@media (max-width:760px){.g2{grid-template-columns:1fr}}
+.kpis{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:12px}
+.kpis.k4{grid-template-columns:repeat(4,minmax(0,1fr))}
+@media (max-width:1200px){.kpis{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media (max-width:560px){.kpis,.kpis.k4{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.kpi{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px 16px;display:grid;gap:2px}
+.kpi span{font-size:.76rem;color:var(--muted);font-weight:600}
+.kpi b{font:800 1.75rem/1.1 var(--f-display);letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.kpi small{font-size:.74rem;color:var(--muted)}
+.kpi small.up{color:var(--crit)}
+.tbl-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:12px}
+table.tbl{width:100%;border-collapse:collapse;font-size:.87rem}
+.tbl th{text-align:left;font:700 .68rem/1 var(--f-body);letter-spacing:.1em;text-transform:uppercase;color:var(--muted);padding:11px 12px;background:var(--sunk);white-space:nowrap}
+.tbl td{padding:10px 12px;border-top:1px solid var(--line);white-space:nowrap;vertical-align:middle}
+.tbl tr.click{cursor:pointer}.tbl tr.click:hover td{background:var(--sunk)}
+.acts{display:flex;gap:6px;justify-content:flex-end;flex-wrap:wrap}
+.lrow{display:grid;grid-template-columns:minmax(0,1.4fr) 54px minmax(0,1.3fr) 76px;gap:12px;align-items:center;padding:10px 0;border-top:1px solid var(--line);font-size:.87rem}
+.lrow:first-child{border-top:0}
+.bar{height:8px;border-radius:99px;background:var(--sunk);overflow:hidden}
+.bar i{display:block;height:100%;border-radius:99px;transition:width .5s}
+@media (max-width:520px){.lrow{grid-template-columns:minmax(0,1fr) 44px 72px}.lrow .bar{display:none}}
+.feed{display:grid;gap:8px;max-height:360px;overflow-y:auto}
+.fi{display:grid;grid-template-columns:4px 1fr auto;gap:12px;padding:10px 12px;border-radius:10px;background:var(--sunk);font-size:.86rem;align-items:start}
+.fi i{align-self:stretch;border-radius:4px}
+.fi time{font:500 .74rem var(--f-mono);color:var(--muted)}
+.fi b{display:block}
+.amb{display:grid;grid-template-columns:auto 1fr auto;gap:12px;align-items:center;padding:12px;border:1px solid var(--line);border-radius:12px}
+.amb .eta{font:800 1.5rem/1 var(--f-display);color:var(--crit);font-variant-numeric:tabular-nums;text-align:center}
+.amb .eta small{display:block;font:600 .64rem var(--f-body);color:var(--muted);letter-spacing:.08em}
+.map svg{width:100%;height:auto;display:block}
+.map .room{cursor:pointer}.map .room:hover{opacity:.85}
+.map text{font-family:var(--f-body)}
+.map-legend{display:flex;gap:14px;flex-wrap:wrap;font-size:.78rem;color:var(--muted);margin-top:10px}
+.map-legend span{display:flex;align-items:center;gap:6px}
+.kanban{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(220px,1fr);gap:12px;overflow-x:auto;padding-bottom:6px}
+.kcol{background:var(--sunk);border-radius:12px;padding:10px;display:grid;gap:8px;align-content:start;min-width:0}
+.kcol h4{display:flex;align-items:center;gap:7px;font-size:.88rem;padding:2px 2px 4px}
+.kcol h4 span.mono{margin-left:auto;font-size:.76rem;color:var(--muted)}
+.kserv{background:var(--rail);color:#fff;border-radius:10px;padding:10px 12px;display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:.8rem}
+.kcard{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:9px 10px;display:grid;gap:6px;font-size:.84rem}
+.kcard .top{display:flex;justify-content:space-between;gap:6px;align-items:center}
+.kcard .nm{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer}
+.slip{background:#FFFDF7;color:#1b1b1b;border-radius:6px;padding:18px 18px 22px;font:500 .8rem/1.45 var(--f-mono);box-shadow:var(--shadow);max-width:290px;margin:0 auto}
+.slip .big{font:700 2.6rem/1 var(--f-mono);text-align:center;margin:10px 0 6px}
+.slip hr{border:0;border-top:1px dashed #999;margin:10px 0}
+.slip .c{text-align:center}
+.slip .qr{display:grid;place-items:center;margin-top:8px}
+.slip .qr svg{width:110px;height:110px}
+.consult{display:grid;grid-template-columns:auto 1fr auto;gap:22px;align-items:center;background:var(--rail);color:var(--rail-text);border-radius:16px;padding:20px 22px}
+.consult .led{font-size:2.4rem}
+.consult b{color:#fff;font-size:1.1rem}
+.timer{font:800 2rem/1 var(--f-mono);color:#fff;text-align:right}
+.timer small{display:block;font:600 .7rem var(--f-body);color:#7F90C3;letter-spacing:.08em;text-transform:uppercase;margin-top:6px}
+.timer.over{color:#FF8A7E}
+@media (max-width:700px){.consult{grid-template-columns:1fr}.timer{text-align:left}}
+.outcomes{display:flex;flex-wrap:wrap;gap:8px}
+.esi-card{border-radius:14px;padding:18px;color:#fff;display:grid;gap:6px}
+.esi-card .lvl{font:800 2.1rem/1 var(--f-display)}
+.lanes{display:grid;gap:8px}
+.lane{display:grid;grid-template-columns:96px 1fr;gap:10px;align-items:start}
+.lane .lh{border-radius:10px;padding:10px;color:#fff;font:700 .78rem/1.2 var(--f-body)}
+.lane .lh b{display:block;font:800 1.1rem var(--f-display)}
+.lane .lc{display:flex;flex-wrap:wrap;gap:8px;padding:6px 0;min-height:44px;align-content:start}
+.ertok{border:1px solid var(--line);background:var(--surface);border-radius:10px;padding:7px 10px;font-size:.8rem;display:grid;line-height:1.3;cursor:pointer;text-align:left}
+.ertok b{font-family:var(--f-mono)}
+.ertok.inbay{border-color:var(--crit);box-shadow:0 0 0 2px color-mix(in srgb,var(--crit) 25%,transparent)}
+.codeblue{position:fixed;inset:0;z-index:90;background:rgba(29,78,216,.95);color:#fff;display:grid;place-items:center;text-align:center;padding:24px}
+.codeblue h2{font-size:clamp(2.4rem,8vw,5rem);font-weight:800;animation:blink 1s infinite}
+.bedgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:8px}
+.bed{border-radius:10px;padding:9px 10px;border:1px solid var(--line);background:var(--surface);cursor:pointer;display:grid;gap:3px;font-size:.74rem;text-align:left;min-height:66px}
+.bed b{font:700 .84rem var(--f-mono)}
+.bed.free{border-color:color-mix(in srgb,var(--ok) 60%,transparent);background:color-mix(in srgb,var(--ok) 9%,var(--surface))}
+.bed.occupied{background:var(--sunk)}
+.bed.cleaning{border-style:dashed;border-color:var(--warn);background:color-mix(in srgb,var(--warn) 9%,var(--surface))}
+.bed span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--muted)}
+.occ{display:flex;gap:18px;flex-wrap:wrap;font-size:.84rem}
+.slots{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}
+.slot{border:1px solid var(--line);border-radius:10px;padding:10px;display:grid;gap:4px;text-align:left;background:var(--surface);cursor:pointer;font-size:.8rem;min-height:72px}
+.slot .t{font:700 .86rem var(--f-mono)}
+.slot.open{border-style:dashed;color:var(--muted)}
+.slot.open:hover:not(:disabled){border-color:var(--brand);color:var(--brand)}
+.slot.past{opacity:.55}.slot.now{box-shadow:0 0 0 2px var(--signal)}
+.phone-wrap{display:grid;grid-template-columns:minmax(0,340px) minmax(0,1fr);gap:28px;align-items:start}
+@media (max-width:860px){.phone-wrap{grid-template-columns:1fr}}
+.phone{width:100%;max-width:340px;border-radius:40px;background:#0A0F1E;padding:12px;box-shadow:var(--shadow);margin:0 auto}
+.screen{background:var(--bg);border-radius:30px;min-height:640px;overflow:hidden;display:flex;flex-direction:column}
+.notch{height:26px;display:flex;justify-content:center}.notch i{width:90px;height:20px;background:#0A0F1E;border-radius:0 0 14px 14px}
+.scr-in{padding:8px 18px 18px;display:grid;gap:14px;flex:1;align-content:start}
+.ring{position:relative;width:170px;height:170px;margin:0 auto}
+.ring svg{width:100%;height:100%;transform:rotate(-90deg)}
+.ring .in{position:absolute;inset:0;display:grid;place-items:center;text-align:center}
+.ring .tk{font:700 1.8rem/1 var(--f-mono)}
+.stars{display:flex;gap:6px;justify-content:center}
+.stars button{border:0;background:none;font-size:1.8rem;cursor:pointer;color:var(--line);padding:0}
+.stars button.on{color:var(--led)}
+.wayline{border-radius:12px;padding:12px;font-size:.84rem;font-weight:600}
+.tv{background:var(--rail);border-radius:20px;padding:24px;color:var(--rail-text)}
+.tv-top{display:flex;justify-content:space-between;align-items:center;gap:14px;padding-bottom:16px;border-bottom:1px dashed var(--rail-line);flex-wrap:wrap}
+.tv-lang{font:700 1.6rem/1.2 var(--f-indic);color:var(--led);min-height:1.2em}
+.tv-clock{font:700 2rem/1 var(--f-mono);color:#fff}
+.tv-grid{display:grid;grid-template-columns:minmax(0,1.4fr) auto auto auto;column-gap:22px;align-items:center}
+.tv-grid .h{font:700 .72rem/1 var(--f-body);letter-spacing:.14em;text-transform:uppercase;color:#6F80B6;padding:16px 4px 10px}
+.tv-grid .c{padding:14px 4px;border-top:1px solid var(--rail-line)}
+.tv-grid .dn{color:#fff;font-weight:700;font-size:1.15rem}.tv-grid .dn small{display:block;font-weight:500;color:#7F90C3;font-size:.82rem}
+.tv-grid .led{font-size:2.1rem}.tv-grid .nx{font:600 1.1rem var(--f-mono);color:#9FB0E0}.tv-grid .wt{font:700 1rem var(--f-mono);color:#9FB0E0;text-align:right}
+@media (max-width:640px){.tv-grid{grid-template-columns:minmax(0,1fr) auto auto}.tv-grid .nxc{display:none}.tv-grid .led{font-size:1.5rem}}
+.chart svg{display:block;width:100%;height:auto}
+.chart text{fill:var(--muted);font:500 11px var(--f-mono)}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:.78rem;color:var(--muted);margin-top:8px}
+.legend i{display:inline-block;width:11px;height:11px;border-radius:3px;margin-right:6px;vertical-align:-1px}
+.quote{padding:12px 14px;border-radius:10px;background:var(--sunk);font-size:.86rem;display:grid;gap:4px}
+.drawer{position:fixed;top:0;right:0;bottom:0;width:min(460px,100%);background:var(--surface);border-left:1px solid var(--line);box-shadow:-20px 0 60px -20px rgba(0,0,0,.35);z-index:60;display:flex;flex-direction:column;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+.dr-h{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:16px 18px;border-bottom:1px solid var(--line)}
+.dr-b{padding:18px;overflow-y:auto;display:grid;gap:16px;align-content:start;flex:1}
+.kv{display:grid;grid-template-columns:130px 1fr;gap:8px 12px;font-size:.87rem}
+.kv dt{color:var(--muted)}.kv dd{margin:0;font-weight:600;min-width:0;overflow-wrap:anywhere}
+.timeline{display:grid;border-left:2px solid var(--line);margin-left:6px}
+.timeline div{position:relative;padding:0 0 14px 16px;font-size:.85rem}
+.timeline div::before{content:"";position:absolute;left:-7px;top:4px;width:12px;height:12px;border-radius:50%;background:var(--surface);border:2px solid var(--brand)}
+.timeline time{font:500 .74rem var(--f-mono);color:var(--muted);display:block}
+.modal-bg{position:fixed;inset:0;background:rgba(3,8,23,.5);z-index:70;display:grid;place-items:center;padding:16px}
+.modal{background:var(--surface);border-radius:18px;width:min(580px,100%);max-height:88vh;overflow:auto;box-shadow:var(--shadow);border:1px solid var(--line)}
+.notif{position:absolute;top:48px;right:0;width:min(380px,calc(100vw - 32px));background:var(--surface);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);padding:12px;z-index:50;display:grid;gap:8px}
+.cp{position:fixed;top:0;right:0;bottom:0;width:min(460px,100%);background:var(--surface);border-left:1px solid var(--line);z-index:65;display:flex;flex-direction:column;box-shadow:-20px 0 60px -20px rgba(0,0,0,.35);padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+.cp-h{padding:16px 18px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:10px}
+.cp-h .av{width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg,#1D4ED8,#6D28D9);display:grid;place-items:center;color:#fff}
+.cp-log{flex:1;overflow-y:auto;padding:16px 18px;display:grid;gap:12px;align-content:start}
+.bub{padding:10px 13px;border-radius:14px;font-size:.9rem;max-width:92%;white-space:pre-wrap;line-height:1.5}
+.bub.u{justify-self:end;background:var(--brand);color:var(--brand-ink);border-bottom-right-radius:4px}
+.bub.a{background:var(--sunk);border-bottom-left-radius:4px}
+.bub.tool{background:transparent;border:1px dashed var(--line);color:var(--muted);font:500 .76rem var(--f-mono);padding:6px 10px}
+.cp-chips{display:flex;gap:6px;flex-wrap:wrap;padding:0 18px 10px}
+.cp-chips button{border:1px solid var(--line);background:var(--surface);border-radius:99px;padding:6px 10px;font-size:.76rem;font-weight:600;cursor:pointer}
+.cp-in{display:flex;gap:8px;padding:12px 18px 16px;border-top:1px solid var(--line)}
+.cp-in input{flex:1}
+.mode{font-size:.72rem;color:var(--muted)}
+/* auth + wizard */
+.auth{min-height:100dvh;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.05fr)}
+.auth-side{background:var(--rail);color:var(--rail-text);padding:48px;display:flex;flex-direction:column;gap:28px;justify-content:space-between}
+.auth-side .brandmark{color:#fff}
+.auth-side h2{color:#fff;font-size:2.1rem;font-weight:800;max-width:16ch}
+.auth-side ul{margin:0;padding:0;list-style:none;display:grid;gap:12px}
+.auth-side li{display:grid;grid-template-columns:22px 1fr;gap:10px;font-size:.95rem}
+.auth-side li::before{content:"";width:18px;height:18px;border-radius:6px;margin-top:3px;background:var(--rail-2);box-shadow:inset 0 0 0 5px var(--rail-2),inset 0 0 0 9px var(--led)}
+.auth-main{display:grid;place-items:center;padding:32px 20px}
+.auth-card{width:min(460px,100%);display:grid;gap:20px}
+.auth-card.wide{width:min(720px,100%)}
+@media (max-width:900px){.auth{grid-template-columns:1fr}.auth-side{display:none}}
+.steps{display:flex;gap:6px}
+.steps i{flex:1;height:4px;border-radius:4px;background:var(--line)}
+.steps i.on{background:var(--brand)}
+.tpl{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}
+.tpl label{display:flex;align-items:center;gap:8px;padding:10px;border:1px solid var(--line);border-radius:10px;cursor:pointer;font-size:.86rem;font-weight:600;background:var(--surface)}
+.tpl label:has(input:checked){border-color:var(--brand);background:var(--brand-soft)}
+.drow{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,.7fr) minmax(0,1.2fr);gap:8px;align-items:center;font-size:.86rem}
+@media (max-width:560px){.drow{grid-template-columns:1fr 1fr}.drow b{grid-column:1/-1}}
+.splash{min-height:100dvh;display:grid;place-items:center;color:var(--muted)}
+.poster{background:#fff;color:#0B1B3A;border-radius:14px;padding:28px;text-align:center;display:grid;gap:12px;justify-items:center;border:1px solid #D9E1EE}
+.poster svg{width:220px;height:220px}
+.poster .ind{font-family:var(--f-indic)}
+.copyrow{display:flex;gap:8px;align-items:center}
+.copyrow input{font-family:var(--f-mono);font-size:.82rem}
+</style>
+</head>
+<body>
+<div id="root"><div class="splash"><p>Connecting to RayCare…</p></div></div>
+<div id="modalRoot"></div>
+<div class="toasts" id="toasts" aria-live="polite"></div>
+<div id="codeRoot"></div>
+
+<script src="/shared/engine.js"></script>
+<script src="/shared/simulator.js"></script>
+<script src="/assets/client.js"></script>
+<script src="/vendor/qrcode.js"></script>
+<script>
+(function () {
+'use strict';
+const E = window.RayCareEngine;
+const $ = s => document.querySelector(s), $$ = s => [...document.querySelectorAll(s)];
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+let C = null;                           // the client (remote or demo)
+const st = () => C.state;
+const now = () => C.now();
+const ago = t => E.mins(t, now());
+const D = id => E.dept(st(), id);
+const V = {};                           // views
+const UI = { view: 'overview', drawer: null, slip: null, papp: { id: null, lang: 'en' }, drDept: null, apDept: null, voice: false, tvi: 0, flash: null, lastCallT: 0 };
+
+/* ================================================================ icons */
+const I = {
+  overview: 'M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z', map: 'M3 6l6-3 6 3 6-3v15l-6 3-6-3-6 3zM9 3v15M15 6v15',
+  queues: 'M4 6h16M4 12h16M4 18h10', doctor: 'M6 3v5a5 5 0 0 0 10 0V3M11 13v3a4 4 0 0 0 8 0v-3M19 11a2 2 0 1 0 0 .01', er: 'M12 4v16M4 12h16',
+  beds: 'M3 18V7M3 14h18v4M21 14v-1a3 3 0 0 0-3-3h-7v4M7 12a1.6 1.6 0 1 0 0-.01', appts: 'M4 6h16v14H4zM4 10h16M8 3v5M16 3v5',
+  patients: 'M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM2 21a7 7 0 0 1 14 0M17 11a3 3 0 1 0 0-6M22 21a6 6 0 0 0-5-6', phone: 'M7 2h10v20H7zM11 18h2',
+  analytics: 'M4 20V10M10 20V4M16 20v-7M22 20H2', lobby: 'M3 5h18v12H3zM8 21h8M12 17v4',
+  settings: 'M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM19 12h2M3 12h2M12 3v2M12 19v2M17 7l1.4-1.4M5.6 18.4L7 17M17 17l1.4 1.4M5.6 5.6L7 7'
+};
+const ico = (k, s = 18) => `<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="${I[k]}"/></svg>`;
+const LOGO = `<svg width="30" height="30" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="9" fill="#1D4ED8"/><path d="M8 22a12 12 0 0 1 16-11" stroke="#FF8A45" stroke-width="3" fill="none" stroke-linecap="round"/><circle cx="9" cy="22" r="2.4" fill="#fff"/><circle cx="16" cy="22" r="2.4" fill="#fff" opacity=".75"/><circle cx="23" cy="22" r="2.4" fill="#fff" opacity=".5"/></svg>`;
+const SPARK = '<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2l2.2 5.8L20 10l-5.8 2.2L12 18l-2.2-5.8L4 10l5.8-2.2z"/></svg>';
+
+/* =========================================================== nav & roles */
+const NAV = [
+  ['Operations', [['overview', 'Overview', ['admin', 'desk', 'nurse']], ['map', 'Hospital map', ['admin', 'desk', 'nurse']], ['queues', 'Front desk', ['admin', 'desk']], ['doctor', 'Doctor room', ['admin', 'doctor']], ['er', 'Emergency', ['admin', 'nurse', 'doctor']], ['beds', 'Beds', ['admin', 'nurse']]]],
+  ['Patients', [['appts', 'Appointments', ['admin', 'desk', 'doctor']], ['patients', 'Patient records', ['admin', 'desk', 'doctor', 'nurse']], ['phone', 'Patient app', ['admin', 'desk']]]],
+  ['Insights', [['analytics', 'Analytics', ['admin']], ['lobby', 'Lobby TV', ['admin', 'desk']], ['settings', 'Settings', ['admin']]]]
+];
+const role = () => C.user.role;
+const allowed = v => NAV.some(([, items]) => items.some(i => i[0] === v && i[2].includes(role())));
+const firstFor = r => { for (const [, items] of NAV) for (const i of items) if (i[2].includes(r)) return i[0]; return 'overview'; };
+const can = cmd => E.can(role(), cmd);
+
+/* ============================================================== helpers */
+const fmt = t => E.hhmm(t), fmt12 = t => E.clock12(t);
+const initials = n => String(n || '?').replace(/^Dr\.?\s*/i, '').split(/\s+/).map(x => x[0]).slice(0, 2).join('').toUpperCase();
+function toast(t, bad) { const el = document.createElement('div'); el.className = 'toast' + (bad ? ' bad' : ''); el.textContent = t; $('#toasts').appendChild(el); setTimeout(() => el.remove(), 3600); }
+async function run(cmd, payload, okMsg) {
+  try { const r = await C.dispatch(cmd, payload); if (okMsg) toast(typeof okMsg === 'function' ? okMsg(r) : okMsg); return r; }
+  catch (e) { toast(e.message || 'Something went wrong', true); return null; }
+}
+function statusOf(m) { const s = E.slaStatus(st(), m); return s === 'over' ? ['p-crit', 'Over SLA', 'var(--crit)'] : s === 'busy' ? ['p-warn', 'Busy', 'var(--warn)'] : ['p-ok', 'Normal', 'var(--ok)']; }
+function chipFor(v) { return v.esi ? `<span class="chip e${v.esi}">ESI ${v.esi}</span>` : v.pri ? '<span class="chip c-pri">Priority</span>' : v.appt ? '<span class="chip c-appt">Appt</span>' : '<span class="chip c-walk">Walk-in</span>'; }
+const servingOf = id => { const s = st().serving[id]; return s ? st().visits[s] : null; };
+const opd = () => E.opdDepts(st());
+const langName = l => E.LANGS[l] || l;
+function trackUrl(v) { return C.mode === 'remote' ? `${location.origin}/t/?v=${encodeURIComponent(v.id)}&k=${v.trackKey}` : `raycare.app/t/?v=${v.tok}`; }
+function qrSvg(text, cell = 3) { try { if (!window.qrcode) return ''; const q = window.qrcode(0, 'M'); q.addData(text); q.make(); return q.createSvgTag({ cellSize: cell, margin: 1, scalable: true }); } catch (e) { return ''; } }
+function deptOptions(sel, withER, onlyOpen) { return st().depts.filter(d => (withER || d.id !== 'ER') && (!onlyOpen || d.open)).map(d => `<option value="${d.id}" ${d.id === sel ? 'selected' : ''}>${esc(d.name)} · ${esc(d.doc)}</option>`).join(''); }
+
+/* ============================================================ voice */
+const VLANG = { en: 'en-IN', hi: 'hi-IN', te: 'te-IN', ta: 'ta-IN', kn: 'kn-IN', ur: 'ur-IN' };
+function announce(tok, room, lang) {
+  const t = String(tok).split('').join(' ');
+  const txt = lang === 'hi' ? `टोकन ${t}, कृपया ${room} में जाएँ।` : lang === 'te' ? `టోకెన్ ${t}, దయచేసి ${room} కి వెళ్ళండి.` : `Token ${t}, please proceed to ${room}.`;
+  try { if (!('speechSynthesis' in window)) return false; const u = new SpeechSynthesisUtterance(txt); u.lang = VLANG[lang] || 'en-IN'; u.rate = .95; speechSynthesis.speak(u); return true; } catch (e) { return false; }
+}
+
+/* ========================================================== charts */
+function bars(data, { w = 560, h = 220, max, line } = {}) {
+  const pl = 34, pb = 26, pt = 14, bw = (w - pl - 8) / Math.max(1, data.length);
+  max = max || Math.max(10, ...data.map(d => d.v)) * 1.15;
+  const y = v => pt + (h - pt - pb) * (1 - v / max);
+  let s = `<svg viewBox="0 0 ${w} ${h}" role="img" aria-label="Bar chart">`;
+  for (let i = 0; i <= 4; i++) { const v = max / 4 * i; s += `<line x1="${pl}" x2="${w - 4}" y1="${y(v)}" y2="${y(v)}" stroke="var(--line)"/><text x="${pl - 7}" y="${y(v) + 4}" text-anchor="end">${Math.round(v)}</text>`; }
+  if (line != null) s += `<line x1="${pl}" x2="${w - 4}" y1="${y(line)}" y2="${y(line)}" stroke="var(--crit)" stroke-dasharray="4 4"/>`;
+  data.forEach((d, i) => {
+    const x = pl + i * bw + bw * .17, b = bw * .66;
+    s += `<rect x="${x}" y="${y(d.v)}" width="${b}" height="${Math.max(0, y(0) - y(d.v))}" rx="4" fill="${d.c || 'var(--brand)'}" ${d.o ? `fill-opacity="${d.o}"` : ''}/>`;
+    if (d.hl) s += `<text x="${x + b / 2}" y="${y(d.v) - 6}" text-anchor="middle" style="fill:var(--ink);font-weight:700">${d.v}</text>`;
+    s += `<text x="${x + b / 2}" y="${h - 8}" text-anchor="middle">${esc(d.l)}</text>`;
+  });
+  return s + '</svg>';
+}
+const hl = h => (h > 12 ? h - 12 : h) + (h >= 12 ? 'p' : 'a');
+function throughput(s) {
+  const nowH = E.hourOf(now());
+  return bars([8, 9, 10, 11, 12, 13, 14, 15, 16, 17].map(h => h <= nowH ? { l: hl(h), v: s.hourly[h] || 0, hl: h === nowH } : { l: hl(h), v: s.forecast[h] || 0, c: 'var(--signal)', o: .45 }), { max: Math.max(30, ...Object.values(s.hourly), ...Object.values(s.forecast)) * 1.15 });
+}
+
+/* ========================================================== widgets */
+function kpiRow() {
+  const s = E.stats(st(), now()), o = E.occupancy(st()), er = E.waiting(st(), 'ER').length + (servingOf('ER') ? 1 : 0), amb = E.inboundAmbulances(st()).length;
+  const k = [['Waiting in OPD', s.waitingNow, `${opd().filter(d => d.open).length} departments open`], ['Avg wait today', s.avgWait + ' min', `median ${s.medianWait} min`, s.avgWait > st().hospital.sla.busy ? 'up' : ''], ['Patients seen', s.served, `${s.arrivals} arrivals today`], ['In emergency', er, `${amb} ambulance${amb === 1 ? '' : 's'} inbound`, amb ? 'up' : ''], ['Bed occupancy', o.total ? Math.round(o.occupied / o.total * 100) + '%' : '—', `${o.free} free · ${o.cleaning} cleaning`], ['Patient pulse', s.ratings ? s.pulse.toFixed(1) + ' ★' : '—', `${s.ratings} ratings today`]];
+  return k.map(x => `<div class="kpi"><span>${x[0]}</span><b>${x[1]}</b><small class="${x[3] || ''}">${x[2]}</small></div>`).join('');
+}
+function loadRows() {
+  const rows = opd().map(d => ({ d, w: E.waiting(st(), d.id).length, m: E.newWait(st(), d.id, now()) })); const max = Math.max(60, ...rows.map(r => r.m));
+  return rows.map(({ d, w, m }) => { const s = statusOf(m); return `<div class="lrow"><div style="display:flex;gap:9px;align-items:center;min-width:0"><span class="ddot" style="background:${d.color}"></span><div style="min-width:0"><b>${esc(d.name)}</b><div class="muted small" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(d.doc)} · ${esc(d.room)}${d.open ? '' : ' · closed'}</div></div></div><div class="mono">${w}</div><div class="bar"><i style="width:${Math.min(100, m / max * 100)}%;background:${s[2]}"></i></div><span class="pill ${s[0]}" style="text-align:center">${m} min</span></div>`; }).join('') || '<div class="empty">No OPD departments yet.</div>';
+}
+function suggestionHtml() {
+  const s = E.suggestion(st(), now());
+  if (!s) return `<div class="fi"><i style="background:var(--ok)"></i><div><b>Load is balanced.</b><span class="muted">No department is more than 15 minutes behind another.</span></div></div>`;
+  return `<div class="fi" style="background:var(--signal-soft)"><i style="background:var(--signal)"></i><div><b>Open a second room for ${esc(D(s.to).name)}.</b><span class="muted">A doctor from ${esc(D(s.from).name)} (${s.fromWait} min wait) would cut ${esc(D(s.to).name)} from about ${s.toWait} to ${s.expected} minutes.</span></div></div>`;
+}
+const LEVEL_COL = { crit: 'var(--crit)', warn: 'var(--warn)', info: 'var(--brand)' };
+function feedRows(n = 8) { return st().alerts.slice(0, n).map(a => `<div class="fi" style="${a.read ? 'opacity:.62' : ''}"><i style="background:${LEVEL_COL[a.level]}"></i><div><b>${esc(a.title)}</b><span class="muted">${esc(a.body)}</span></div><time>${fmt(a.t)}</time></div>`).join('') || '<div class="empty">No alerts right now.</div>'; }
+function ambCards() {
+  return E.inboundAmbulances(st()).map(a => { const m = Math.max(0, Math.round((a.arriveAt - now()) / E.MIN)); return `<div class="amb"><div class="eta">${m}<small>MIN</small></div><div style="min-width:0"><b class="mono">${a.id}</b> <span class="chip e${a.esi}">ESI ${a.esi}</span><div class="small">${esc(a.complaint)}</div><div class="muted small">${esc(a.from)}</div></div>${a.prepared ? '<span class="pill p-ok">Bay ready</span>' : (can('prepareBay') ? `<button class="btn b-sig b-sm" data-a="prepBay" data-id="${a.id}">Prepare bay</button>` : '<span class="pill p-warn">Inbound</span>')}</div>`; }).join('') || '<div class="empty">No ambulances inbound.</div>';
+}
+
+/* ======================================================= digital twin */
+function mapSVG() {
+  const W = 820, H = 470, depts = opd(), n = Math.max(1, depts.length);
+  const rw = Math.min(120, (640 - (n - 1) * 10) / n);
+  let s = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Live floor map of the OPD block">`;
+  s += `<rect x="4" y="4" width="${W - 8}" height="${H - 8}" rx="18" fill="var(--sunk)" stroke="var(--line)"/>`;
+  s += `<rect x="190" y="150" width="${W - 210}" height="36" rx="8" fill="var(--surface)" stroke="var(--line)" stroke-dasharray="4 4"/><text x="505" y="173" text-anchor="middle" font-size="11" fill="var(--muted)">MAIN CORRIDOR</text>`;
+  depts.forEach((d, i) => {
+    const x = 20 + i * (rw + 10), m = E.newWait(st(), d.id, now()), sc = statusOf(m), cur = servingOf(d.id), w = E.waiting(st(), d.id).length, small = rw < 100;
+    s += `<g class="room" data-a="room" data-id="${d.id}" tabindex="0" role="button" aria-label="${esc(d.name)}, ${w} waiting"><rect x="${x}" y="24" width="${rw}" height="114" rx="12" fill="var(--surface)" stroke="${d.open ? sc[2] : 'var(--line)'}" stroke-width="2"/><rect x="${x}" y="24" width="${rw}" height="8" rx="4" fill="${d.color}"/>
+      <text x="${x + 10}" y="52" font-size="${small ? 10.5 : 12}" font-weight="700" fill="var(--ink)">${esc(d.room)}</text><text x="${x + 10}" y="67" font-size="10" fill="var(--muted)">${esc(d.name.split(/[ &]/)[0]).slice(0, small ? 9 : 16)}</text>
+      <text x="${x + 10}" y="96" font-size="${small ? 14 : 19}" font-weight="700" fill="${d.color}" font-family="JetBrains Mono,monospace">${cur ? cur.tok : '—'}</text>
+      <text x="${x + 10}" y="124" font-size="10" fill="var(--muted)">${d.open ? `${w} waiting${small ? '' : ' · ' + m + 'm'}` : 'Closed'}</text></g>`;
+  });
+  const labs = E.todayVisits(st(), now()).filter(v => /Lab|Imaging/.test(v.outcome || '')).length;
+  s += `<rect x="670" y="24" width="130" height="114" rx="12" fill="var(--surface)" stroke="var(--line)"/><text x="682" y="52" font-size="12" font-weight="700" fill="var(--ink)">Lab & Imaging</text><text x="682" y="70" font-size="10.5" fill="var(--muted)">Sample collection</text><text x="682" y="124" font-size="10.5" fill="var(--muted)">${labs} orders today</text>`;
+  const er = E.waiting(st(), 'ER'), erc = servingOf('ER');
+  s += `<g class="room" data-a="go" data-v="er" tabindex="0" role="button" aria-label="Emergency"><rect x="20" y="150" width="160" height="236" rx="12" fill="color-mix(in srgb,var(--crit) 8%,var(--surface))" stroke="var(--crit)" stroke-width="2"/><text x="34" y="178" font-size="13" font-weight="800" fill="var(--crit)">EMERGENCY</text><text x="34" y="196" font-size="10.5" fill="var(--muted)">Resus bay · triage</text><text x="34" y="232" font-size="10.5" fill="var(--muted)">IN RESUS BAY</text><text x="34" y="256" font-size="20" font-weight="700" fill="var(--crit)" font-family="JetBrains Mono,monospace">${erc ? erc.tok : '—'}</text>`;
+  er.slice(0, 5).forEach((v, i) => { s += `<rect x="${34 + i * 28}" y="282" width="22" height="22" rx="6" fill="var(--esi${Math.min(v.esi || 4, 5)})"/><text x="${45 + i * 28}" y="297" text-anchor="middle" font-size="11" font-weight="700" fill="#fff">${v.esi || 4}</text>`; });
+  s += `<text x="34" y="330" font-size="10.5" fill="var(--muted)">${er.length} waiting by acuity</text></g>`;
+  const amb = E.inboundAmbulances(st());
+  s += `<rect x="20" y="396" width="160" height="56" rx="12" fill="var(--surface)" stroke="var(--line)"/><text x="34" y="420" font-size="11" font-weight="700" fill="var(--ink)">Ambulance bay</text><text x="34" y="438" font-size="10.5" fill="${amb.length ? 'var(--crit)' : 'var(--muted)'}">${amb.length ? amb.map(a => a.id + ' · ' + Math.max(0, Math.round((a.arriveAt - now()) / E.MIN)) + 'm').join('  ') : 'Clear'}</text>`;
+  const ws = Object.values(st().visits).filter(v => v.status === 'waiting' && v.dept !== 'ER');
+  s += `<rect x="190" y="198" width="440" height="190" rx="14" fill="var(--surface)" stroke="var(--line)"/><text x="206" y="220" font-size="12" font-weight="700" fill="var(--ink)">Waiting hall</text><text x="614" y="220" text-anchor="end" font-size="11" fill="var(--muted)">${ws.length} people · 120 seats</text>`;
+  const seat = i => [214 + (i % 20) * 20.5, 240 + Math.floor(i / 20) * 22.5];
+  for (let i = 0; i < 120; i++) { const [x, y] = seat(i); s += `<rect x="${x - 5}" y="${y - 5}" width="10" height="10" rx="3" fill="none" stroke="var(--line)"/>`; }
+  ws.forEach((v, i) => { const [x, y] = seat(v.seat != null ? v.seat : (119 - i) % 120); const d = D(v.dept); s += `<circle cx="${x}" cy="${y}" r="6" fill="${d ? d.color : '#888'}"><title>${v.tok} · ${esc(d ? d.name : '')}</title></circle>`; });
+  const o = E.occupancy(st()), reqs = E.openBedReqs(st()).length;
+  s += `<g class="room" data-a="go" data-v="beds" tabindex="0" role="button" aria-label="Wards"><rect x="640" y="198" width="160" height="112" rx="12" fill="var(--surface)" stroke="var(--line)"/><text x="654" y="222" font-size="12" font-weight="700" fill="var(--ink)">Wards (lift)</text><text x="654" y="252" font-size="22" font-weight="800" fill="var(--ink)">${o.total ? Math.round(o.occupied / o.total * 100) : 0}%</text><text x="654" y="272" font-size="10.5" fill="var(--muted)">occupied · ${o.free} free</text><text x="654" y="292" font-size="10.5" fill="${reqs ? 'var(--warn)' : 'var(--muted)'}">${reqs} admission${reqs === 1 ? '' : 's'} pending</text></g>`;
+  const rx = E.todayVisits(st(), now()).filter(v => v.outcome === 'Prescription issued').length;
+  s += `<rect x="640" y="320" width="160" height="68" rx="12" fill="var(--surface)" stroke="var(--line)"/><text x="654" y="344" font-size="12" font-weight="700" fill="var(--ink)">Pharmacy</text><text x="654" y="364" font-size="10.5" fill="var(--muted)">${rx} prescriptions today</text>`;
+  s += `<g class="room" data-a="go" data-v="queues" tabindex="0" role="button" aria-label="Registration"><rect x="300" y="398" width="220" height="54" rx="12" fill="var(--brand-soft)" stroke="var(--brand)"/><text x="410" y="421" text-anchor="middle" font-size="12" font-weight="700" fill="var(--brand)">Registration & QR kiosks</text><text x="410" y="439" text-anchor="middle" font-size="10.5" fill="var(--brand)">Main entrance ↓</text></g>`;
+  return s + '</svg>';
+}
+const mapLegend = () => `<div class="map-legend">${opd().map(d => `<span><i class="ddot" style="background:${d.color}"></i>${esc(d.name)}</span>`).join('')}<span>Room border: <b style="color:var(--ok)">normal</b> · <b style="color:var(--warn)">busy</b> · <b style="color:var(--crit)">over SLA</b></span></div>`;
+
+/* ================================================================ VIEWS */
+V.overview = {
+  t: 'Overview', s: 'Live operations across the hospital',
+  shell: () => `<div class="vhead"><div><h1>Good ${E.hourOf(now()) < 12 ? 'morning' : E.hourOf(now()) < 17 ? 'afternoon' : 'evening'}, ${esc(C.user.name.replace(/\s*\(.*\)/, ''))}</h1><p>Everything happening in the OPD, emergency and wards right now. Select a room on the map for details.</p></div>
+    <div class="vactions"><button class="btn b-pri" data-a="summary">${ico('analytics', 16)} Shift summary</button>${can('codeBlue') ? '<button class="btn b-crit" data-a="codeBlue">Code Blue</button>' : ''}</div></div>
+    <div class="kpis" id="ov-k"></div>
+    <div class="g-32"><div class="card map"><div class="card-h"><h2>Live floor map</h2><p>OPD block · ground floor</p></div><div id="ov-map"></div><div id="ov-leg"></div></div>
+      <div style="display:grid;gap:18px;align-content:start"><div class="card"><div class="card-h"><h2>Inbound ambulances</h2></div><div id="ov-amb" style="display:grid;gap:8px"></div></div>
+      <div class="card"><div class="card-h"><h2>Alerts</h2><button class="btn b-gh b-sm" data-a="readAll">Mark all read</button></div><div class="feed" id="ov-feed"></div></div></div></div>
+    <div class="g2"><div class="card"><div class="card-h"><h2>Department load</h2><p>Waiting · wait for a new arrival</p></div><div id="ov-load"></div><div id="ov-sug" style="margin-top:12px"></div></div>
+      <div class="card chart"><div class="card-h"><h2>Patients seen per hour</h2><p>Today and forecast</p></div><div id="ov-ch"></div><div class="legend"><span><i style="background:var(--brand)"></i>Seen</span><span><i style="background:var(--signal);opacity:.45"></i>Forecast</span></div></div></div>`,
+  live: () => { $('#ov-k').innerHTML = kpiRow(); $('#ov-map').innerHTML = mapSVG(); $('#ov-leg').innerHTML = mapLegend(); $('#ov-amb').innerHTML = ambCards(); $('#ov-feed').innerHTML = feedRows(); $('#ov-load').innerHTML = loadRows(); $('#ov-sug').innerHTML = suggestionHtml(); $('#ov-ch').innerHTML = throughput(E.stats(st(), now())); }
+};
+
+V.map = {
+  t: 'Hospital map', s: 'Digital twin of the OPD block',
+  shell: () => `<div class="vhead"><div><h1>Hospital map</h1><p>A live digital twin. Each dot in the waiting hall is a patient in their seat, coloured by department. Rooms change colour as waits cross your service levels.</p></div></div>
+    <div class="card map"><div id="mp"></div><div id="mp-leg"></div></div><div class="g3" id="mp-cards"></div>`,
+  live: () => {
+    $('#mp').innerHTML = mapSVG(); $('#mp-leg').innerHTML = mapLegend();
+    const r = opd().map(d => ({ d, m: E.newWait(st(), d.id, now()) })).sort((a, b) => b.m - a.m)[0];
+    const inside = Object.values(st().visits).filter(v => v.status === 'waiting' || v.status === 'serving').length;
+    const hall = Object.values(st().visits).filter(v => v.status === 'waiting' && v.dept !== 'ER').length;
+    $('#mp-cards').innerHTML = `<div class="card"><h3>Busiest room</h3><p class="muted small" style="margin-top:6px">${r ? esc(r.d.room + ' · ' + r.d.name) : '—'}</p><b style="font:800 2rem var(--f-display)">${r ? r.m + ' min' : '—'}</b></div><div class="card"><h3>Patients in the building</h3><p class="muted small" style="margin-top:6px">Waiting, in consult and in emergency</p><b style="font:800 2rem var(--f-display)">${inside}</b></div><div class="card"><h3>Seats free in the hall</h3><p class="muted small" style="margin-top:6px">120 seats</p><b style="font:800 2rem var(--f-display)">${Math.max(0, 120 - hall)}</b></div>`;
+  }
+};
+
+V.queues = {
+  t: 'Front desk', s: 'Register patients and manage every queue',
+  shell: () => `<div class="vhead"><div><h1>Front desk</h1><p>Register a walk-in in under 30 seconds. Seniors, pregnant women and people with disabilities get a priority flag that moves them ahead of walk-ins, never ahead of emergencies.</p></div></div>
+  <div class="g-23"><div class="card"><div class="card-h"><h2>New registration</h2><span class="pill p-info">ABHA-ready</span></div>
+    <form class="f" data-form="register" autocomplete="off">
+      <div class="r2"><div class="field"><label for="rgName">Full name</label><input type="text" id="rgName" required maxlength="80" placeholder="Patient name"></div><div class="field"><label for="rgPhone">Mobile</label><input type="tel" id="rgPhone" inputmode="numeric" maxlength="14" placeholder="10-digit mobile"></div></div>
+      <div class="r3"><div class="field"><label for="rgAge">Age</label><input type="number" id="rgAge" min="0" max="125" placeholder="Years"></div><div class="field"><label for="rgSex">Sex</label><select id="rgSex"><option value="">—</option><option>F</option><option>M</option><option>Other</option></select></div><div class="field"><label for="rgAbha">ABHA number</label><input type="text" id="rgAbha" maxlength="20" placeholder="Optional"></div></div>
+      <div class="field"><label for="rgDept">Department</label><select id="rgDept">${deptOptions(opd().find(d => d.open) && opd().find(d => d.open).id, false, true)}</select></div>
+      <div class="r2"><div class="field"><span class="flabel">Alert language</span><div class="seg">${st().hospital.langs.map((l, i) => `<label><input type="radio" name="rgLang" value="${l}" ${i ? '' : 'checked'}>${esc(langName(l))}</label>`).join('')}</div></div>
+      <div class="field"><span class="flabel">Priority</span><div class="seg"><label><input type="radio" name="rgPri" value="0" checked>Standard</label><label><input type="radio" name="rgPri" value="1">Priority</label></div></div></div>
+      <button class="btn b-pri b-lg" type="submit">Issue token</button></form></div>
+    <div class="card"><div class="card-h"><h2>Token slip</h2><p>Prints on any 58 mm thermal printer</p></div><div id="q-slip"></div></div></div>
+  <div class="card"><div class="card-h"><h2>All queues</h2><p>Select a name to open the record</p></div><div class="kanban" id="q-kb"></div></div>`,
+  live: () => {
+    const sl = UI.slip && st().visits[UI.slip];
+    $('#q-slip').innerHTML = sl ? (() => { const d = D(sl.dept), e = sl.status === 'waiting' ? E.eta(st(), sl.id, now()) : { pos: 0, mins: 0 }; return `<div class="slip"><div class="c"><b>${esc(st().hospital.name.toUpperCase())}</b><br>${esc(st().hospital.city)}</div><hr><div class="c">${esc(d.name.toUpperCase())} · ${esc(d.room)}</div><div class="big">${sl.tok}</div><div class="c">${esc(sl.name)}</div><hr>Issued   ${fmt(sl.arrived)}<br>Ahead    ${Math.max(0, e.pos - 1)} patients<br>Est wait ~${e.mins} min<br>Doctor   ${esc(d.doc)}<hr><div class="c">Scan to track your turn</div><div class="qr">${qrSvg(trackUrl(sl))}</div></div><div class="acts" style="justify-content:center;margin-top:12px"><button class="btn b-gh b-sm" data-a="printSlip">Print slip</button></div>`; })() : '<div class="empty">Issue a token to preview the slip.</div>';
+    $('#q-kb').innerHTML = st().depts.map(d => { const c = servingOf(d.id), w = E.waiting(st(), d.id); return `<div class="kcol"><h4><span class="ddot" style="background:${d.color}"></span>${esc(d.name)}<span class="mono">${w.length}</span></h4>
+      <div class="kserv"><span>Now <b class="mono" style="color:var(--led)">${c ? c.tok : '—'}</b></span>${can('callNext') ? `<button class="btn b-sm" style="background:rgba(255,255,255,.12);color:#fff" data-a="callNext" data-d="${d.id}">Call next</button>` : ''}</div>
+      ${w.map(v => `<div class="kcard"><div class="top"><b class="mono">${v.tok}</b>${chipFor(v)}</div><div class="nm" data-a="patient" data-pid="${v.pid}">${esc(v.name)}</div><div class="top"><span class="muted small">${ago(v.arrived)} min · ~${E.eta(st(), v.id, now()).mins} left</span><span class="acts"><button class="btn b-gh b-sm" data-a="callVisit" data-id="${v.id}">Call</button><button class="btn b-gh b-sm" data-a="noShow" data-id="${v.id}" aria-label="Mark ${v.tok} no-show">✕</button></span></div></div>`).join('') || '<div class="empty" style="padding:14px">Queue empty</div>'}</div>`; }).join('');
+  }
+};
+
+V.doctor = {
+  t: 'Doctor room', s: 'Consult console',
+  shell: () => {
+    UI.drDept = UI.drDept || C.user.dept || (opd()[0] && opd()[0].id);
+    return `<div class="vhead"><div><h1>Doctor room</h1><p>Call, complete and route patients in one tap. Outcomes flow to pharmacy, lab and wards automatically.</p></div>
+    <div class="vactions"><div class="field" style="min-width:260px"><label for="drDept">Room</label><select id="drDept" data-ch="drDept">${deptOptions(UI.drDept, true)}</select></div>
+    ${C.mode === 'demo' ? `<label class="tog" style="padding-bottom:10px"><input type="checkbox" data-ch="drAuto" ${C.isManual(UI.drDept) ? '' : 'checked'}> Simulated doctor</label>` : ''}</div></div>
+    <div id="dr-c"></div>
+    <div class="g-32"><div class="card"><div class="card-h"><h2>Waiting for you</h2><p>Priority order</p></div><div id="dr-q"></div></div><div class="card"><div class="card-h"><h2>Your session</h2></div><div id="dr-s"></div></div></div>`;
+  },
+  live: () => {
+    const id = UI.drDept, d = D(id); if (!d) return;
+    const c = servingOf(id), w = E.waiting(st(), id), el = c ? (now() - c.start) / E.MIN : 0, pace = E.pace(st(), id, now()), p = c && st().patients[c.pid];
+    const mm = Math.floor(el), ss = Math.floor((el - mm) * 60);
+    $('#dr-c').innerHTML = `<div class="consult"><div><div class="small" style="color:#7F90C3">IN CONSULT · ${esc(d.room)}</div><div class="led ${UI.flash === id ? 'flash' : ''}">${c ? c.tok : '—'}</div></div>
+      <div style="min-width:0"><b>${c ? esc(c.name) : 'Room is free'}</b>${c ? `<div class="small">${p ? `${p.age != null ? p.age : '—'} ${esc(p.sex || '')} · ${p.pid}${p.abha ? ' · ABHA linked' : ''}` : ''} ${c.esi ? ` · <span class="chip e${c.esi}">ESI ${c.esi}</span>` : ''}</div><div class="small" style="color:#7F90C3">Waited ${E.mins(c.arrived, c.start)} min · prefers ${esc(langName(c.lang))}</div>` : '<div class="small" style="color:#7F90C3">Call the next patient when ready</div>'}</div>
+      <div class="timer ${el > pace * 1.5 ? 'over' : ''}">${c ? String(mm).padStart(2, '0') + ':' + String(ss).padStart(2, '0') : '--:--'}<small>typical ${pace} min</small></div></div>
+      <div class="card" style="margin-top:14px"><div class="card-h"><h2>Complete visit</h2><p>${c ? 'Choose an outcome. The next patient is called automatically.' : 'No patient in consult.'}</p></div>
+      <div class="outcomes">${E.OUTCOMES.map(o => `<button class="btn ${o === 'Admit' ? 'b-sig' : 'b-gh'}" data-a="complete" data-o="${o}" ${c && can('completeVisit') ? '' : 'disabled'}>${o}</button>`).join('')}
+      <select data-ch="refer" aria-label="Refer to another department" ${c && can('completeVisit') ? '' : 'disabled'} style="width:auto"><option value="">Refer to…</option>${opd().filter(x => x.id !== id).map(x => `<option value="${x.id}">${esc(x.name)}</option>`).join('')}</select>
+      <button class="btn b-pri" data-a="callNext" data-d="${id}" ${w.length && !c ? '' : 'disabled'}>Call next</button><button class="btn b-gh" data-a="recall" data-d="${id}" ${c ? '' : 'disabled'}>Recall on display</button></div></div>`;
+    $('#dr-q').innerHTML = w.length ? `<div class="tbl-wrap"><table class="tbl"><thead><tr><th>Token</th><th>Patient</th><th>Type</th><th>Waiting</th><th></th></tr></thead><tbody>${w.map(v => `<tr><td class="mono"><b>${v.tok}</b></td><td>${esc(v.name)}</td><td>${chipFor(v)}</td><td class="mono">${ago(v.arrived)} min</td><td><div class="acts"><button class="btn b-gh b-sm" data-a="callVisit" data-id="${v.id}">Call</button><button class="btn b-gh b-sm" data-a="noShow" data-id="${v.id}">No-show</button></div></td></tr>`).join('')}</tbody></table></div>` : '<div class="empty">No one is waiting.</div>';
+    const seen = E.todayVisits(st(), now()).filter(v => v.dept === id && v.status === 'done').length;
+    $('#dr-s').innerHTML = `<dl class="kv"><dt>Seen today</dt><dd class="mono">${seen}</dd><dt>Consult pace</dt><dd class="mono">${pace} min</dd><dt>Queue</dt><dd class="mono">${w.length} waiting</dd><dt>New arrival</dt><dd class="mono">~${E.newWait(st(), id, now())} min</dd><dt>Doctor</dt><dd>${esc(d.doc)}</dd></dl><p class="muted small" style="margin-top:12px">Wait estimates learn from this room's real consult times once five patients have been seen today.</p>`;
+  }
+};
+
+V.er = {
+  t: 'Emergency', s: 'Triage, acuity board and ambulance pre-alerts',
+  shell: () => `<div class="vhead"><div><h1>Emergency</h1><p>Patients are seen by acuity, not arrival. Ambulances pre-alert the bay so the team is ready before the doors open.</p></div><div class="vactions">${can('codeBlue') ? '<button class="btn b-crit" data-a="codeBlue">Code Blue</button>' : ''}${can('ambulancePreAlert') ? '<button class="btn b-gh" data-a="preAlert">Log ambulance pre-alert</button>' : ''}</div></div>
+  <div class="g-23"><div class="card"><div class="card-h"><h2>Rapid triage</h2><span class="pill p-mute">ESI v4</span></div>
+    <form class="f" data-form="triage" id="trForm" autocomplete="off">
+      <div class="r2"><div class="field"><label for="trName">Patient</label><input type="text" id="trName" value="Unknown male" maxlength="80"></div><div class="field"><label for="trAge">Age</label><input type="number" id="trAge" value="58" min="0" max="125"></div></div>
+      <div class="field"><label for="trC">Chief complaint</label><select id="trC">${Object.entries(E.COMPLAINTS).map(([k, v]) => `<option value="${k}">${v}</option>`).join('')}</select></div>
+      <div class="r3"><div class="field"><label for="trS">SpO₂ %</label><input type="number" id="trS" value="95" min="40" max="100"></div><div class="field"><label for="trH">Pulse</label><input type="number" id="trH" value="112" min="20" max="250"></div><div class="field"><label for="trB">Systolic BP</label><input type="number" id="trB" value="148" min="40" max="260"></div></div>
+      <div class="field"><span class="flabel">Responsiveness (AVPU)</span><div class="seg"><label><input type="radio" name="trA" value="A" checked>Alert</label><label><input type="radio" name="trA" value="V">Voice</label><label><input type="radio" name="trA" value="P">Pain</label><label><input type="radio" name="trA" value="U">None</label></div></div>
+      <div class="field"><label for="trP">Pain <span class="mono" id="trPv">6</span>/10</label><input type="range" id="trP" min="0" max="10" value="6"></div>
+      <div id="trOut"></div>
+      <button class="btn b-sig b-lg" type="submit" ${can('triage') ? '' : 'disabled'}>Add to emergency queue</button>
+      <p class="muted small">The suggestion supports the triage nurse. The emergency doctor confirms or overrides every level, and overrides are logged.</p></form></div>
+   <div style="display:grid;gap:18px;align-content:start;min-width:0"><div class="card"><div class="card-h"><h2>Acuity board</h2><p id="er-sum"></p></div><div class="lanes" id="er-l"></div></div>
+     <div class="card"><div class="card-h"><h2>Inbound ambulances</h2></div><div id="er-a" style="display:grid;gap:8px"></div></div></div></div>`,
+  live: () => {
+    const all = Object.values(st().visits).filter(v => v.dept === 'ER' && (v.status === 'waiting' || v.status === 'serving'));
+    const inBay = servingOf('ER');
+    $('#er-sum').textContent = `${all.length} patient${all.length === 1 ? '' : 's'} · resus bay ${inBay ? inBay.tok : 'free'}`;
+    $('#er-l').innerHTML = [1, 2, 3, 4, 5].map(l => { const ts = all.filter(v => (v.esi || 4) === l).sort((a, b) => a.arrived - b.arrived); return `<div class="lane"><div class="lh e${l}"><b>ESI ${l}</b>${E.ESI_LABEL[l]}</div><div class="lc">${ts.map(v => `<button class="ertok ${v.status === 'serving' ? 'inbay' : ''}" data-a="patient" data-pid="${v.pid}"><b>${v.tok}</b><span>${esc(v.name)}</span><span class="muted">${v.status === 'serving' ? 'In resus bay' : ago(v.arrived) + ' min waiting'}</span></button>`).join('') || '<span class="muted small" style="align-self:center">None</span>'}</div></div>`; }).join('') + (can('callNext') ? `<div class="acts" style="justify-content:flex-start;margin-top:6px"><button class="btn b-pri b-sm" data-a="callNext" data-d="ER">Move next patient to resus bay</button></div>` : '');
+    $('#er-a').innerHTML = ambCards();
+    if (!$('#trOut').dataset.init) { renderTriage(); $('#trOut').dataset.init = 1; }
+  }
+};
+function triageInput() { return { name: $('#trName').value, age: $('#trAge').value, complaint: $('#trC').value, spo2: $('#trS').value, hr: $('#trH').value, bp: $('#trB').value, pain: $('#trP').value, avpu: (document.querySelector('input[name=trA]:checked') || {}).value || 'A' }; }
+function renderTriage() { const o = $('#trOut'); if (!o) return; const t = E.triage(triageInput()); o.innerHTML = `<div class="esi-card e${t.level}"><span class="small" style="letter-spacing:.12em;text-transform:uppercase;font-weight:700;opacity:.85">Suggested level</span><div class="lvl">ESI ${t.level} · ${t.label}</div><span class="small">Because: ${t.reasons.join(', ')}.</span></div>`; $('#trPv').textContent = $('#trP').value; }
+
+V.beds = {
+  t: 'Beds', s: 'Admissions and bed turnover',
+  shell: () => `<div class="vhead"><div><h1>Bed management</h1><p>Admission requests from the emergency department and doctors land here. Assign the best bed in one tap. Discharged beds go to cleaning and return to free automatically after 20 minutes.</p></div></div>
+    <div class="card"><div class="card-h"><h2>Pending admissions</h2><p id="bd-n"></p></div><div id="bd-rq"></div></div><div style="display:grid;gap:18px" id="bd-w"></div>`,
+  live: () => {
+    const reqs = E.openBedReqs(st());
+    $('#bd-n').textContent = reqs.length + ' waiting';
+    $('#bd-rq').innerHTML = reqs.length ? `<div class="tbl-wrap"><table class="tbl"><thead><tr><th>Request</th><th>Patient</th><th>From</th><th>Needs</th><th>Waiting</th><th></th></tr></thead><tbody>${reqs.map(r => { const free = st().beds.some(b => b.ward === r.ward && b.status === 'free'); return `<tr><td class="mono">${r.id}</td><td><b>${esc(r.name)}</b> <span class="mono muted">${r.tok}</span></td><td>${esc(r.from)}${r.esi ? ` <span class="chip e${r.esi}">ESI ${r.esi}</span>` : ''}</td><td>${esc(st().wardNames[r.ward])}</td><td class="mono">${ago(r.at)} min</td><td><div class="acts">${can('assignBed') ? `<button class="btn b-pri b-sm" data-a="assignBed" data-id="${r.id}">${free ? 'Assign best bed' : 'Assign any free bed'}</button>` : ''}</div></td></tr>`; }).join('')}</tbody></table></div>` : '<div class="empty">No pending admissions.</div>';
+    $('#bd-w').innerHTML = ['ICU', 'GW', 'PW'].filter(w => st().beds.some(b => b.ward === w)).map(w => { const o = E.occupancy(st(), w); return `<div class="card"><div class="card-h"><h2>${esc(st().wardNames[w])}</h2><div class="occ"><span><b>${o.occupied}</b>/${o.total} occupied</span><span style="color:var(--ok)"><b>${o.free}</b> free</span><span style="color:var(--warn)"><b>${o.cleaning}</b> cleaning</span></div></div>
+      <div class="bedgrid">${st().beds.filter(b => b.ward === w).map(b => `<button class="bed ${b.status}" data-a="bed" data-id="${b.id}"><b>${b.id}</b><span>${b.status === 'occupied' ? esc(b.name || 'Occupied') : b.status === 'cleaning' ? 'Cleaning · ' + Math.max(0, 20 - ago(b.since)) + 'm' : 'Free'}</span></button>`).join('')}</div></div>`; }).join('') || '<div class="card"><div class="empty">No wards configured. Add beds in the setup wizard.</div></div>';
+  }
+};
+
+V.appts = {
+  t: 'Appointments', s: 'Slots, check-in and no-shows',
+  shell: () => { UI.apDept = UI.apDept || C.user.dept || (opd()[0] && opd()[0].id); return `<div class="vhead"><div><h1>Appointments</h1><p>Book 15-minute slots, check patients in with one tap, and let the queue blend appointments with walk-ins fairly.</p></div>
+    <div class="vactions"><div class="field" style="min-width:260px"><label for="apDept">Doctor</label><select id="apDept" data-ch="apDept">${deptOptions(UI.apDept)}</select></div></div></div>
+    <div class="kpis k4" id="ap-k"></div><div class="card"><div class="card-h"><h2>Today's slots</h2><p>Open slot to book · booked slot to check in</p></div><div class="slots" id="ap-s"></div></div>`; },
+  live: () => {
+    const day = E.dayKey(now()), sl = st().appts.filter(a => a.dept === UI.apDept && a.day === day).sort((a, b) => a.t - b.t);
+    const c = s => sl.filter(a => a.status === s).length, booked = sl.filter(a => a.status !== 'open').length, ns = c('noshow');
+    $('#ap-k').innerHTML = [['Booked', booked], ['Checked in', c('checked')], ['No-shows', ns], ['No-show rate', (booked ? Math.round(ns / booked * 100) : 0) + '%']].map(k => `<div class="kpi"><span>${k[0]}</span><b>${k[1]}</b></div>`).join('');
+    const lab = { open: 'Open · book', booked: 'Booked', checked: 'Checked in', noshow: 'No-show' }, pc = { open: 'p-mute', booked: 'p-info', checked: 'p-ok', noshow: 'p-crit' };
+    $('#ap-s').innerHTML = sl.map(a => { const past = a.t + 15 * E.MIN < now(), cur = now() >= a.t && now() < a.t + 15 * E.MIN; return `<button class="slot ${a.status === 'open' ? 'open' : ''} ${past ? 'past' : ''} ${cur ? 'now' : ''}" data-a="slot" data-id="${a.id}" ${a.status === 'open' && past ? 'disabled' : ''}><span class="t">${fmt12(a.t)}</span><span>${a.name ? esc(a.name) : '&nbsp;'}</span><span class="pill ${pc[a.status]}" style="justify-self:start">${lab[a.status]}</span></button>`; }).join('') || '<div class="empty">No slots today.</div>';
+  }
+};
+
+V.patients = {
+  t: 'Patient records', s: 'Today\'s visits and full history',
+  shell: () => `<div class="vhead"><div><h1>Patient records</h1><p>Every visit today with its full journey from check-in to outcome. Search by name, token, MRN or phone${C.mode === 'remote' ? ', including past visits' : ''}.</p></div></div>
+   <div class="card"><div class="card-h"><input type="search" id="ptQ" placeholder="Search patients…" style="max-width:340px" data-in="ptQ" aria-label="Search patients"><div class="seg" style="flex-wrap:nowrap"><label><input type="radio" name="ptF" value="all" checked data-ch="ptF">All today</label><label><input type="radio" name="ptF" value="waiting" data-ch="ptF">Waiting</label><label><input type="radio" name="ptF" value="done" data-ch="ptF">Seen</label></div></div><div id="pt-t"></div><div id="pt-h" style="margin-top:14px"></div></div>`,
+  live: () => {
+    const q = (($('#ptQ') || {}).value || '').toLowerCase(), f = (document.querySelector('input[name=ptF]:checked') || {}).value || 'all';
+    let rows = E.todayVisits(st(), now()).sort((a, b) => b.arrived - a.arrived);
+    if (f === 'waiting') rows = rows.filter(v => v.status === 'waiting' || v.status === 'serving'); if (f === 'done') rows = rows.filter(v => v.status === 'done');
+    if (q) rows = rows.filter(v => { const p = st().patients[v.pid]; return (v.name + ' ' + v.tok + ' ' + v.pid + ' ' + (p ? p.phone : '')).toLowerCase().includes(q); });
+    const sm = { waiting: ['p-info', 'Waiting'], serving: ['p-ok', 'In consult'], done: ['p-mute', 'Seen'], noshow: ['p-crit', 'No-show'] };
+    $('#pt-t').innerHTML = rows.length ? `<div class="tbl-wrap"><table class="tbl"><thead><tr><th>MRN</th><th>Patient</th><th>Age/Sex</th><th>Token</th><th>Department</th><th>Arrived</th><th>Status</th><th>Outcome</th></tr></thead><tbody>${rows.slice(0, 100).map(v => { const p = st().patients[v.pid], d = D(v.dept); return `<tr class="click" data-a="patient" data-pid="${v.pid}"><td class="mono">${v.pid}</td><td><b>${esc(v.name)}</b></td><td class="mono">${p && p.age != null ? p.age : '—'} ${esc(p ? p.sex : '')}</td><td class="mono">${v.tok}</td><td><span class="ddot" style="background:${d ? d.color : '#888'}"></span> ${esc(d ? d.name : v.dept)}</td><td class="mono">${fmt(v.arrived)}</td><td><span class="pill ${sm[v.status][0]}">${sm[v.status][1]}</span></td><td class="muted">${esc(v.outcome || '—')}</td></tr>`; }).join('')}</tbody></table></div>` : '<div class="empty">No visits match today.</div>';
+    if (q.length >= 2 && !$('#pt-h').dataset.q) $('#pt-h').innerHTML = `<button class="btn b-gh b-sm" data-a="searchHistory">Search all records for “${esc(q)}”</button>`;
+    if (q.length < 2) { $('#pt-h').innerHTML = ''; delete $('#pt-h').dataset.q; }
+  }
+};
+
+const PL = {
+  en: { title: 'Your visit', pos: 'Position', wait: 'Est. wait', now: 'Now serving', late: "I'm running late", dir: 'Directions', turn: "It's your turn!", go: 'Please go to', done: 'Visit complete', rate: 'How was your visit?', thanks: 'Thank you for your feedback.', ahead: 'ahead of you' },
+  hi: { title: 'आपकी विज़िट', pos: 'स्थान', wait: 'अनुमानित प्रतीक्षा', now: 'अभी सेवा में', late: 'मुझे देर हो रही है', dir: 'रास्ता', turn: 'आपकी बारी है!', go: 'कृपया जाएँ', done: 'विज़िट पूरी हुई', rate: 'आपका अनुभव कैसा रहा?', thanks: 'आपकी प्रतिक्रिया के लिए धन्यवाद।', ahead: 'आपसे पहले' },
+  te: { title: 'మీ సందర్శన', pos: 'స్థానం', wait: 'అంచనా నిరీక్షణ', now: 'ఇప్పుడు సేవలో', late: 'నేను ఆలస్యంగా వస్తున్నాను', dir: 'దారి', turn: 'మీ వంతు వచ్చింది!', go: 'దయచేసి వెళ్ళండి', done: 'సందర్శన పూర్తయింది', rate: 'మీ అనుభవం ఎలా ఉంది?', thanks: 'మీ అభిప్రాయానికి ధన్యవాదాలు.', ahead: 'మీ ముందు' }
+};
+V.phone = {
+  t: 'Patient app', s: 'What patients see on their phone',
+  shell: () => `<div class="vhead"><div><h1>Patient app</h1><p>No download needed. Patients open the link from their SMS or scan the QR on their slip, and see their live turn, directions and a "running late" button that keeps things fair for everyone.</p></div></div>
+    <div class="phone-wrap"><div class="phone"><div class="screen"><div class="notch"><i></i></div><div class="scr-in" id="ph"></div></div></div>
+    <div style="display:grid;gap:18px;align-content:start;min-width:0"><div class="card"><div class="card-h"><h2>Follow a patient</h2><p>Pick any waiting token</p></div><div id="ph-pick" style="display:flex;flex-wrap:wrap;gap:6px"></div><div id="ph-link" style="margin-top:12px"></div></div>
+    <div class="card"><h2>What patients get</h2><ul class="muted" style="margin:10px 0 0;padding-left:18px;display:grid;gap:6px"><li>Honest wait times that update every minute</li><li>An SMS or WhatsApp message when three patients are ahead</li><li>"Running late" moves them back three places instead of losing their turn</li><li>Colour-coded directions to the right room</li><li>Everything in English, Hindi or Telugu</li></ul></div></div></div>`,
+  live: () => {
+    let v = UI.papp.id && st().visits[UI.papp.id];
+    if (!v) { v = Object.values(st().visits).find(x => x.status === 'waiting' && x.dept !== 'ER'); UI.papp.id = v && v.id; }
+    $('#ph-pick').innerHTML = Object.values(st().visits).filter(x => x.status === 'waiting' && x.dept !== 'ER').slice(0, 18).map(x => `<button class="btn ${v && x.id === v.id ? 'b-pri' : 'b-gh'} b-sm mono" data-a="pick" data-id="${x.id}">${x.tok}</button>`).join('') || '<span class="muted small">No one waiting.</span>';
+    $('#ph-link').innerHTML = v && C.mode === 'remote' ? `<a class="btn b-gh b-sm" href="${esc(trackUrl(v))}" target="_blank" rel="noopener">Open the real tracking page</a>` : '';
+    if (!v) { $('#ph').innerHTML = '<div class="empty">No one is waiting.</div>'; return; }
+    const L = PL[UI.papp.lang] || PL.en, d = D(v.dept), Cc = 2 * Math.PI * 72; let body = '';
+    if (v.status === 'waiting') {
+      const e = E.eta(st(), v.id, now()); UI.papp.start = UI.papp.start && UI.papp.for === v.id ? UI.papp.start : (UI.papp.for = v.id, e.pos);
+      const pct = Math.max(.05, 1 - (e.pos - 1) / Math.max(UI.papp.start, 1)), cur = servingOf(v.dept);
+      body = `<div class="ring"><svg viewBox="0 0 170 170"><circle cx="85" cy="85" r="72" stroke="var(--sunk)" stroke-width="14" fill="none"/><circle cx="85" cy="85" r="72" stroke="${d.color}" stroke-width="14" fill="none" stroke-linecap="round" stroke-dasharray="${Cc}" stroke-dashoffset="${Cc * (1 - pct)}" style="transition:stroke-dashoffset .6s"/></svg><div class="in"><div><div class="muted small">TOKEN</div><div class="tk">${v.tok}</div><div class="muted small">${e.pos - 1} ${L.ahead}</div></div></div></div>
+      <div class="r3" style="text-align:center;grid-template-columns:1fr 1fr 1fr"><div><b style="font:800 1.4rem var(--f-display)">${e.pos}</b><div class="muted small">${L.pos}</div></div><div><b style="font:800 1.4rem var(--f-display)">${e.mins}m</b><div class="muted small">${L.wait}</div></div><div><b class="mono" style="font-size:1.05rem">${cur ? cur.tok : '—'}</b><div class="muted small">${L.now}</div></div></div>
+      <div class="wayline" style="background:color-mix(in srgb,${d.color} 14%,transparent)"><b>${L.dir}:</b> ${esc(d.room)}, ${esc(d.floor)}</div><button class="btn b-gh" data-a="late" data-id="${v.id}" ${v.lateCount >= 2 ? 'disabled' : ''}>${L.late}</button>`;
+    } else if (v.status === 'serving') body = `<div style="text-align:center;padding:40px 0;display:grid;gap:10px"><div style="font:800 1.8rem var(--f-display);color:var(--ok)">${L.turn}</div><div class="tk mono" style="font-size:2.4rem;font-weight:700">${v.tok}</div><div>${L.go} <b>${esc(d.room)}</b></div><div class="wayline" style="background:var(--brand-soft);color:var(--brand)">${esc(d.floor)}</div></div>`;
+    else { const fb = st().feedback.find(f => f.visitId === v.id); body = `<div style="text-align:center;padding:30px 0;display:grid;gap:12px"><div style="font:800 1.5rem var(--f-display)">${L.done}</div><div class="muted">${esc(v.outcome || '')}</div><div>${L.rate}</div><div class="stars">${[1, 2, 3, 4, 5].map(i => `<button data-a="rate" data-id="${v.id}" data-s="${i}" class="${fb && fb.stars >= i ? 'on' : ''}" aria-label="${i} stars">★</button>`).join('')}</div>${fb ? `<div class="muted small">${L.thanks}</div>` : ''}</div>`; }
+    $('#ph').innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center"><b style="font-family:var(--f-display)">${esc(st().hospital.name)}</b><div class="seg-mini">${['en', 'hi', 'te'].map(l => `<button data-a="plang" data-l="${l}" aria-pressed="${UI.papp.lang === l}">${l === 'en' ? 'EN' : l === 'hi' ? 'हि' : 'తె'}</button>`).join('')}</div></div><div><div class="muted small">${L.title}</div><b style="font:700 1.1rem var(--f-display)">${esc(v.name.split(' ')[0])} · ${esc(d.name)}</b></div>${body}`;
+  }
+};
+
+V.analytics = {
+  t: 'Analytics', s: 'Waits, throughput, service levels and patient pulse',
+  shell: () => `<div class="vhead"><div><h1>Analytics</h1><p>The numbers your board and accreditation auditors ask for, updated live.</p></div><div class="vactions"><button class="btn b-gh" data-a="exportCsv">Export visits (CSV)</button><button class="btn b-pri" data-a="copilotAsk" data-q="Look at today's numbers and give me the three most important findings with one action each.">${SPARK} Ask Copilot for insights</button></div></div>
+   <div class="kpis k4" id="an-k"></div>
+   <div class="g2"><div class="card chart"><div class="card-h"><h2>Average wait by hour</h2><p>Minutes, check-in to consult · dashed line is your SLA</p></div><div id="an-w"></div></div><div class="card chart"><div class="card-h"><h2>Average wait by department</h2><p>Today</p></div><div id="an-d"></div></div></div>
+   <div class="g2"><div class="card chart"><div class="card-h"><h2>Throughput and forecast</h2></div><div id="an-t"></div><div class="legend"><span><i style="background:var(--brand)"></i>Seen</span><span><i style="background:var(--signal);opacity:.45"></i>Forecast</span></div></div><div class="card"><div class="card-h"><h2>Patient pulse</h2><p id="an-pn"></p></div><div id="an-p" style="display:grid;gap:8px"></div></div></div>`,
+  live: () => {
+    const s = E.stats(st(), now()), sla = st().hospital.sla.over, nowH = E.hourOf(now());
+    $('#an-k').innerHTML = [['SLA compliance', s.slaCompliance + '%', `waits under ${sla} min`], ['Median wait', s.medianWait + ' min', 'check-in to consult'], ['No-show rate', s.noShowRate + '%', 'appointments'], ['Pulse', s.ratings ? s.pulse.toFixed(2) + ' ★' : '—', s.ratings + ' ratings']].map(k => `<div class="kpi"><span>${k[0]}</span><b>${k[1]}</b><small>${k[2]}</small></div>`).join('');
+    const top = Math.max(60, sla + 10);
+    $('#an-w').innerHTML = bars([8, 9, 10, 11, 12, 13, 14, 15, 16, 17].filter(h => h <= nowH).map(h => ({ l: hl(h), v: s.waitByHour[h] || 0, hl: true })), { line: sla, max: top });
+    $('#an-d').innerHTML = bars(st().depts.map(d => ({ l: d.name.length > 8 ? d.name.slice(0, 6) + '.' : d.name, v: s.waitByDept[d.id] || 0, c: d.color, hl: true })), { line: sla, max: top });
+    $('#an-t').innerHTML = throughput(s);
+    const f = st().feedback.filter(x => E.dayKey(x.t) === E.dayKey(now())), dist = [5, 4, 3, 2, 1].map(n => f.filter(x => x.stars === n).length);
+    $('#an-pn').textContent = f.length + ' ratings today';
+    $('#an-p').innerHTML = [5, 4, 3, 2, 1].map((n, i) => `<div style="display:grid;grid-template-columns:36px 1fr 30px;gap:10px;align-items:center;font-size:.84rem"><span>${n} ★</span><div class="bar"><i style="width:${f.length ? dist[i] / f.length * 100 : 0}%;background:${n >= 4 ? 'var(--ok)' : n === 3 ? 'var(--warn)' : 'var(--crit)'}"></i></div><span class="mono muted">${dist[i]}</span></div>`).join('') + f.filter(x => x.text).slice(0, 3).map(x => `<div class="quote"><span>${'★'.repeat(x.stars)}<span class="muted">${'★'.repeat(5 - x.stars)}</span> · ${esc(D(x.dept) ? D(x.dept).name : '')} · ${fmt(x.t)}</span><span>${esc(x.text)}</span></div>`).join('');
+  }
+};
+
+const TVL = [['Now serving', 'var(--f-body)'], ['अब बारी है', '"Noto Sans Devanagari",system-ui'], ['ఇప్పుడు వంతు', '"Noto Sans Telugu",system-ui']];
+V.lobby = {
+  t: 'Lobby TV', s: 'Runs on any smart TV browser',
+  shell: () => `<div class="vhead"><div><h1>Lobby TV</h1><p>Open the lobby display on any TV browser${C.mode === 'remote' ? ` at <b class="mono">${esc(location.origin)}/tv/</b>` : ''}. Tokens appear without names, and calls can be announced aloud in the patient's language.</p></div>
+    <div class="vactions"><label class="tog" style="padding-bottom:10px"><input type="checkbox" data-ch="voice" ${UI.voice ? 'checked' : ''}> Voice announcements</label><button class="btn b-gh" data-a="testVoice">Test voice</button><button class="btn b-pri" data-a="fullscreen">Full screen</button></div></div>
+    <div id="tvWrap"><div class="tv" id="tv"></div></div>`,
+  live: () => {
+    const L = TVL[UI.tvi], b = E.board(st(), now());
+    $('#tv').innerHTML = `<div class="tv-top"><div><div style="font:700 .8rem var(--f-body);letter-spacing:.16em;color:#8EA0D6;text-transform:uppercase">${esc(st().hospital.name)}</div><div class="tv-lang" style="font-family:${L[1]}">${L[0]}</div></div><div class="tv-clock">${fmt12(now())}</div></div>
+      <div class="tv-grid"><div class="h">Department</div><div class="h">Token</div><div class="h nxc">Next</div><div class="h" style="text-align:right">Wait</div>${b.rows.map(r => `<div class="c dn">${esc(r.name)}<small>${esc(r.room)}</small></div><div class="c"><span class="led ${UI.flash === r.id ? 'flash' : ''}">${r.serving || '—'}</span></div><div class="c nx nxc">${r.next || '—'}</div><div class="c wt" style="${r.id === 'ER' ? 'color:#FF8A7E' : ''}">${r.id === 'ER' ? 'By triage' : '~' + r.wait + ' min'}</div>`).join('')}</div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:18px"><span style="color:#6F80B6;font-size:.8rem;align-self:center">RECENT CALLS</span>${b.lastCalls.map(c => `<span style="border:1px solid var(--rail-line);border-radius:10px;padding:8px 12px;font:600 .9rem var(--f-mono);color:#C9D4F2">${c.tok} → ${esc(c.room)}</span>`).join('')}</div>`;
+  }
+};
+
+V.settings = {
+  t: 'Settings', s: 'Hospital, departments, staff, devices and audit',
+  shell: () => { const h = st().hospital; return `<div class="vhead"><div><h1>Settings</h1><p>Everything an administrator needs: service levels, rooms and doctors, staff accounts, lobby screens and QR posters, and the full audit trail.</p></div><div class="vactions">${C.mode === 'demo' ? '<button class="btn b-gh" data-a="wizardDemo">Try the setup wizard</button><button class="btn b-gh" data-a="resetDemo">Reset demo</button>' : ''}</div></div>
+   <div class="g2"><div class="card"><div class="card-h"><h2>Hospital</h2></div><form class="f" data-form="settings">
+     <div class="r2"><div class="field"><label for="sName">Hospital name</label><input type="text" id="sName" value="${esc(h.name)}" maxlength="80" required></div><div class="field"><label for="sCity">City</label><input type="text" id="sCity" value="${esc(h.city)}" maxlength="60"></div></div>
+     <div class="r2"><div class="field"><label for="slB">Busy above <span class="mono" id="slBv">${h.sla.busy}</span> min</label><input type="range" id="slB" min="5" max="60" step="5" value="${h.sla.busy}" data-in="slB"></div><div class="field"><label for="slO">Over SLA above <span class="mono" id="slOv">${h.sla.over}</span> min</label><input type="range" id="slO" min="10" max="120" step="5" value="${h.sla.over}" data-in="slO"></div></div>
+     <div class="field"><span class="flabel">Patient languages</span><div style="display:flex;gap:14px;flex-wrap:wrap;margin-top:4px">${Object.entries(E.LANGS).map(([k, n]) => `<label class="tog"><input type="checkbox" name="sLang" value="${k}" ${h.langs.includes(k) ? 'checked' : ''} ${k === 'en' ? 'disabled' : ''}> ${n}</label>`).join('')}</div></div>
+     <label class="tog"><input type="checkbox" id="sQR" ${h.publicCheckin ? 'checked' : ''}> Allow QR self check-in</label>
+     <div><button class="btn b-pri" type="submit">Save changes</button></div></form></div>
+    <div class="card"><div class="card-h"><h2>Screens and QR posters</h2></div><div style="display:grid;gap:12px">${[['Lobby TV', '/tv/', 'Open on any smart TV browser'], ['QR self check-in', '/checkin/', 'Print as a poster at the entrance'], ['Staff app', '/app/', 'For desk, doctors and nurses']].map(([n, p, hint]) => `<div class="field"><label>${n} <span class="muted" style="font-weight:500">· ${hint}</span></label><div class="copyrow"><input type="text" readonly value="${esc(C.mode === 'remote' ? location.origin + p : 'https://your-server' + p)}" aria-label="${n} link"><button class="btn b-gh b-sm" data-a="copy" data-v="${esc(C.mode === 'remote' ? location.origin + p : 'https://your-server' + p)}">Copy</button></div></div>`).join('')}<div><button class="btn b-pri" data-a="poster">Print QR check-in poster</button></div></div></div></div>
+   <div class="card"><div class="card-h"><h2>Departments</h2><p>Close a room to stop new tokens</p></div><div class="tbl-wrap"><table class="tbl"><thead><tr><th>Department</th><th>Room</th><th>Doctor</th><th>Avg consult</th><th>Open</th></tr></thead><tbody>${st().depts.map(d => `<tr><td><span class="ddot" style="background:${d.color}"></span> <b>${esc(d.name)}</b> <span class="mono muted">${d.id}</span></td><td><input type="text" value="${esc(d.room)}" style="width:120px" data-ch="dRoom" data-d="${d.id}" aria-label="Room for ${esc(d.name)}"></td><td><input type="text" value="${esc(d.doc)}" style="width:180px" data-ch="dDoc" data-d="${d.id}" aria-label="Doctor for ${esc(d.name)}"></td><td><input type="number" min="2" max="60" value="${d.avg}" style="width:76px" data-ch="dAvg" data-d="${d.id}" aria-label="Average consult minutes for ${esc(d.name)}"></td><td>${d.id === 'ER' ? '<span class="pill p-ok">Always</span>' : `<label class="tog"><input type="checkbox" ${d.open ? 'checked' : ''} data-ch="dOpen" data-d="${d.id}" aria-label="${esc(d.name)} open"></label>`}</td></tr>`).join('')}</tbody></table></div>
+     <form class="f" data-form="addDept" style="margin-top:14px;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));align-items:end"><div class="field"><label for="adId">Add department</label><select id="adId">${Object.entries(E.TEMPLATES).filter(([k]) => !D(k)).map(([k, t]) => `<option value="${k}">${t.name}</option>`).join('')}</select></div><div class="field"><label for="adRoom">Room</label><input type="text" id="adRoom" placeholder="OPD 7" required maxlength="30"></div><div class="field"><label for="adDoc">Doctor</label><input type="text" id="adDoc" placeholder="Dr. Name" required maxlength="60"></div><div><button class="btn b-gh" type="submit">Add</button></div></form></div>
+   <div class="card"><div class="card-h"><h2>Staff accounts</h2><p>Each role sees only the screens it needs</p></div><div id="st-u"></div>
+     <form class="f" data-form="addUser" style="margin-top:14px;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));align-items:end"><div class="field"><label for="uName">Name</label><input type="text" id="uName" required maxlength="80"></div><div class="field"><label for="uEmail">Email</label><input type="email" id="uEmail" required></div><div class="field"><label for="uRole">Role</label><select id="uRole"><option value="desk">Front desk</option><option value="doctor">Doctor</option><option value="nurse">Nurse</option><option value="admin">Administrator</option></select></div><div class="field"><label for="uDept">Room (doctors)</label><select id="uDept"><option value="">—</option>${deptOptions('')}</select></div><div class="field"><label for="uPass">Temporary password</label><input type="text" id="uPass" required minlength="8"></div><div><button class="btn b-pri" type="submit">Create account</button></div></form></div>
+   <div class="card"><div class="card-h"><h2>Audit log</h2><p>Who did what, and when</p></div><div id="st-a"></div></div>`; },
+  live: () => {
+    $('#st-a').innerHTML = `<div class="tbl-wrap" style="max-height:420px;overflow:auto"><table class="tbl"><thead><tr><th>Time</th><th>By</th><th>Action</th></tr></thead><tbody>${st().audit.slice(0, 60).map(a => `<tr><td class="mono">${fmt(a.t)}</td><td>${esc(a.who)}</td><td style="white-space:normal">${esc(a.text)}</td></tr>`).join('')}</tbody></table></div>`;
+    if (!$('#st-u').dataset.loaded) { $('#st-u').dataset.loaded = 1; loadUsers(); }
+  }
+};
+async function loadUsers() {
+  try {
+    const us = await C.listUsers();
+    $('#st-u').innerHTML = `<div class="tbl-wrap"><table class="tbl"><thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Last sign-in</th><th>Status</th></tr></thead><tbody>${us.map(u => `<tr><td><b>${esc(u.name)}</b></td><td class="mono small">${esc(u.email)}</td><td>${esc(E.ROLES[u.role])}${u.dept && D(u.dept) ? ' · ' + esc(D(u.dept).name) : ''}</td><td class="mono small">${u.lastLogin ? new Date(u.lastLogin).toLocaleString() : '—'}</td><td>${u.id === C.user.id ? '<span class="pill p-info">You</span>' : `<label class="tog"><input type="checkbox" ${u.active ? 'checked' : ''} data-ch="uActive" data-id="${u.id}" aria-label="${esc(u.name)} active"> ${u.active ? 'Active' : 'Disabled'}</label>`}</td></tr>`).join('')}</tbody></table></div>`;
+  } catch (e) { $('#st-u').innerHTML = `<div class="empty">${esc(e.message)}</div>`; }
+}
+
+/* ================================================= shell, router, refresh */
+function renderShell() {
+  $('#root').innerHTML = `<div class="app"><aside class="rail" id="rail" aria-label="Main navigation"><a class="brandmark" href="#overview" data-a="go" data-v="overview">${LOGO} RayCare <small>OS</small></a><nav id="nav"></nav>
+    <div class="rail-foot"><div class="hosp"><b>${esc(st().hospital.name)}</b>${esc(st().hospital.city)}${C.mode === 'demo' ? ' · demo data' : ''}</div>
+    ${C.mode === 'demo' ? `<div><label for="roleSel">View as</label><select id="roleSel">${Object.entries(RayCareClient.DEMO_USERS).map(([k, u]) => `<option value="${k}" ${C.user.role === k ? 'selected' : ''}>${E.ROLES[k]} · ${esc(u.name)}</option>`).join('')}</select></div>`
+      : `<div class="who"><span class="avatar">${esc(initials(C.user.name))}</span><div style="min-width:0"><b style="color:#fff;display:block;font-size:.88rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(C.user.name)}</b><span style="font-size:.76rem">${esc(E.ROLES[C.user.role])}</span></div></div><button class="linkbtn" data-a="logout">Sign out</button>`}</div></aside>
+    <div style="min-width:0"><header class="topbar"><button class="iconbtn menubtn" data-a="menu" aria-label="Open menu"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button>
+      <div class="crumb"><b id="vTitle"></b><span id="vSub"></span></div>
+      <div class="tb-right">${C.mode === 'demo' ? '<span class="demo-chip">Demo</span>' : ''}<div class="clock" id="clockBox"><span class="live-dot"></span><span class="lbl">${C.mode === 'demo' ? 'Hospital time' : 'Live'}</span><b id="clock"></b></div>
+      ${C.mode === 'demo' ? '<div class="seg-mini" role="group" aria-label="Simulation speed"><button data-a="speed" data-s="0" aria-pressed="false" aria-label="Pause">❚❚</button><button data-a="speed" data-s="1" aria-pressed="true">1×</button><button data-a="speed" data-s="3" aria-pressed="false">3×</button></div>' : ''}
+      <div style="position:relative"><button class="iconbtn" data-a="notif" aria-label="Alerts"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M6 16V11a6 6 0 1 1 12 0v5l2 2H4zM10 21h4"/></svg><span class="dot" id="bellDot" hidden>0</span></button><div class="notif" id="notif" hidden></div></div>
+      <button class="copilot-btn" data-a="copilot">${SPARK}<span class="t">Copilot</span><kbd>⌘K</kbd></button></div></header>
+    <main id="main"></main></div></div>
+    <div class="scrim" id="scrim" hidden data-a="closeAll"></div><aside class="drawer" id="drawer" hidden aria-label="Details"></aside>
+    <aside class="cp" id="cp" hidden aria-label="RayCare Copilot"><div class="cp-h"><div class="av">${SPARK}</div><div style="flex:1"><b>RayCare Copilot</b><div class="mode" id="cpMode"></div></div><button class="btn b-gh b-sm" data-a="cpStop" id="cpStop" hidden>Stop</button><button class="iconbtn" data-a="closeAll" aria-label="Close Copilot">✕</button></div><div class="cp-log" id="cpLog"></div><div class="cp-chips" id="cpChips"></div><form class="cp-in" id="cpForm"><input type="text" id="cpInput" placeholder="Ask or instruct, e.g. call next in cardiology" autocomplete="off" aria-label="Message Copilot"><button class="btn b-pri" type="submit">Send</button></form></aside>`;
+  $('#cpForm').addEventListener('submit', e => { e.preventDefault(); cpSend($('#cpInput').value); });
+  const rs = $('#roleSel'); if (rs) rs.addEventListener('change', e => { C.setRole(e.target.value); UI.drDept = null; renderShell(); go(allowed(UI.view) ? UI.view : firstFor(role())); toast('Now viewing as ' + E.ROLES[role()]); });
+  cpModeLabel();
+}
+function renderNav() {
+  const er = E.inboundAmbulances(st()).length + E.waiting(st(), 'ER').filter(v => v.esi && v.esi <= 2).length, beds = E.openBedReqs(st()).length;
+  $('#nav').innerHTML = NAV.map(([g, items]) => { const vis = items.filter(i => i[2].includes(role())); if (!vis.length) return ''; return `<div class="navgrp">${g}</div>` + vis.map(([id, label]) => `<button class="navbtn" data-a="go" data-v="${id}" ${UI.view === id ? 'aria-current="page"' : ''}>${ico(id)}${label}${id === 'er' && er ? `<span class="badge">${er}</span>` : ''}${id === 'beds' && beds ? `<span class="badge">${beds}</span>` : ''}</button>`).join(''); }).join('');
+}
+function go(v) {
+  if (!V[v]) v = 'overview'; if (!allowed(v)) v = firstFor(role());
+  UI.view = v; $('#main').innerHTML = V[v].shell(); $('#vTitle').textContent = V[v].t; $('#vSub').textContent = V[v].s;
+  V[v].live && V[v].live(); renderNav(); $('#rail').classList.remove('open'); if ($('#cp').hidden && $('#drawer').hidden) $('#scrim').hidden = true; window.scrollTo({ top: 0 });
+}
+let lastAlertCount = 0;
+function refresh() {
+  if (!$('#main') || !st()) return;
+  $('#clock').textContent = C.mode === 'demo' ? fmt(now()) : fmt(now());
+  const cb = $('#clockBox'); cb.classList.toggle('paused', C.mode === 'demo' && C.speed === 0); cb.classList.toggle('offline', C.mode === 'remote' && C.online === false);
+  const un = st().alerts.filter(a => !a.read).length; $('#bellDot').hidden = !un; $('#bellDot').textContent = un;
+  // Announce new calls on the lobby screen and flash the board.
+  const lc = st().lastCalls[0];
+  if (lc && lc.t > UI.lastCallT) { if (UI.lastCallT) { UI.flash = lc.dept; if (UI.voice && UI.view === 'lobby') announce(lc.tok, lc.room, lc.lang); } UI.lastCallT = lc.t; }
+  if (st().recall && st().recall.t > (UI.lastRecall || 0)) { UI.lastRecall = st().recall.t; UI.flash = st().recall.dept; if (UI.voice && UI.view === 'lobby') announce(st().recall.tok, st().recall.room, st().recall.lang); }
+  renderNav();
+  const a = document.activeElement, typing = a && a.closest && a.closest('#main') && /INPUT|SELECT|TEXTAREA/.test(a.tagName) && !a.closest('[data-live-ok]');
+  if (!(typing && UI.view === 'settings')) V[UI.view].live && V[UI.view].live();
+  if (UI.drawer) renderDrawer();
+  if (!$('#notif').hidden) renderNotif();
+  renderCodeBlue();
+  UI.flash = null;
+}
+
+/* ===================================================== drawer / modal */
+function openDrawer(type, id) { UI.drawer = { type, id }; $('#drawer').hidden = false; $('#scrim').hidden = false; renderDrawer(); }
+function renderDrawer() {
+  const { type, id } = UI.drawer; let h = '', b = '';
+  if (type === 'room') {
+    const d = D(id), c = servingOf(id), w = E.waiting(st(), id), m = E.newWait(st(), id, now()), s = statusOf(m); h = `${esc(d.room)} · ${esc(d.name)}`;
+    b = `<dl class="kv"><dt>Doctor</dt><dd>${esc(d.doc)}</dd><dt>Now serving</dt><dd class="mono">${c ? c.tok + ' · ' + esc(c.name) : '—'}</dd><dt>Waiting</dt><dd>${w.length}</dd><dt>New arrival wait</dt><dd>~${m} min</dd><dt>Consult pace</dt><dd>${E.pace(st(), id, now())} min</dd><dt>Status</dt><dd><span class="pill ${s[0]}">${s[1]}</span></dd></dl>
+      <div class="acts" style="justify-content:flex-start">${can('callNext') ? `<button class="btn b-pri" data-a="callNext" data-d="${id}">Call next</button>` : ''}${allowed('doctor') ? `<button class="btn b-gh" data-a="openRoom" data-d="${id}">Open doctor console</button>` : ''}</div>
+      <h3>Next up</h3>${w.slice(0, 8).map(v => `<div class="fi" data-a="patient" data-pid="${v.pid}" style="cursor:pointer"><i style="background:${d.color}"></i><div><b class="mono">${v.tok}</b> ${esc(v.name)} ${chipFor(v)}</div><time>${ago(v.arrived)}m</time></div>`).join('') || '<div class="empty">Queue empty</div>'}`;
+  }
+  if (type === 'patient') {
+    const p = st().patients[id]; if (!p) { closeAll(); return; } h = esc(p.name);
+    const vs = (p.visits || []).map(x => st().visits[x]).filter(Boolean).reverse();
+    b = `<dl class="kv"><dt>MRN</dt><dd class="mono">${p.pid}</dd><dt>Age / Sex</dt><dd>${p.age != null ? p.age : '—'} / ${esc(p.sex || '—')}</dd><dt>Mobile</dt><dd class="mono">${esc(E.maskPhone(p.phone) || '—')}</dd><dt>ABHA</dt><dd>${p.abha ? esc(p.abha) : '<span class="muted">Not linked</span>'}</dd></dl>
+      ${vs.map(v => { const d = D(v.dept); return `<div class="card" style="padding:14px"><div class="card-h" style="margin-bottom:8px"><b class="mono">${v.tok}</b><span>${chipFor(v)} <span class="ddot" style="background:${d ? d.color : '#888'}"></span> ${esc(d ? d.name : v.dept)}</span></div>
+        ${v.triage ? `<p class="small muted" style="margin-bottom:8px">Triage: ${esc(E.COMPLAINTS[v.triage.complaint] || '—')} · SpO₂ ${esc(v.triage.spo2 || '—')} · pulse ${esc(v.triage.hr || '—')} · BP ${esc(v.triage.bp || '—')}</p>` : ''}
+        <div class="timeline">${v.events.map(e => `<div><time>${fmt(e.t)}</time>${esc(e.x)}</div>`).join('')}</div>
+        <div class="acts" style="justify-content:flex-start">${v.status === 'waiting' && can('callVisit') ? `<button class="btn b-pri b-sm" data-a="callVisit" data-id="${v.id}">Call now</button>` : ''}${v.status === 'waiting' ? `<button class="btn b-gh b-sm" data-a="follow" data-id="${v.id}">Open in patient app</button>` : ''}
+        ${v.dept === 'ER' && (v.status === 'waiting' || v.status === 'serving') && can('overrideEsi') ? `<button class="btn b-gh b-sm" data-a="overrideEsi" data-id="${v.id}">Change ESI</button>` : ''}</div></div>`; }).join('')}
+      <div id="histBox">${C.mode === 'remote' ? '<button class="btn b-gh b-sm" data-a="loadHistory" data-pid="' + p.pid + '">Show earlier visits</button>' : ''}</div>`;
+  }
+  if (type === 'bed') {
+    const bd = st().beds.find(x => x.id === id); h = `Bed ${bd.id} · ${esc(st().wardNames[bd.ward])}`;
+    b = `<dl class="kv"><dt>Status</dt><dd>${bd.status}</dd>${bd.name ? `<dt>Patient</dt><dd>${esc(bd.name)}</dd>` : ''}<dt>Since</dt><dd class="mono">${bd.since ? fmt(bd.since) : '—'}</dd></dl>
+      <div class="acts" style="justify-content:flex-start">${bd.status === 'occupied' && can('dischargeBed') ? `<button class="btn b-pri" data-a="discharge" data-id="${bd.id}">Discharge patient</button>` : ''}${bd.status === 'cleaning' && can('markBedReady') ? `<button class="btn b-ok" data-a="bedReady" data-id="${bd.id}">Mark clean and ready</button>` : ''}
+      ${bd.status === 'free' && can('assignBed') ? (E.openBedReqs(st()).length ? E.openBedReqs(st()).map(r => `<button class="btn b-pri b-sm" data-a="assignBed" data-id="${r.id}" data-bed="${bd.id}">Assign ${esc(r.name)}</button>`).join('') : '<div class="empty" style="width:100%">No pending admissions.</div>') : ''}</div>`;
+  }
+  const keepHist = $('#histBox') && $('#histBox').dataset.loaded ? $('#histBox').innerHTML : null;
+  $('#drawer').innerHTML = `<div class="dr-h"><h2>${h}</h2><button class="iconbtn" data-a="closeAll" aria-label="Close">✕</button></div><div class="dr-b">${b}</div>`;
+  if (keepHist && $('#histBox')) { $('#histBox').innerHTML = keepHist; $('#histBox').dataset.loaded = 1; }
+}
+function modal(title, body) { $('#modalRoot').innerHTML = `<div class="modal-bg" data-a="closeModalBg"><div class="modal" role="dialog" aria-modal="true" aria-label="${esc(title)}"><div class="dr-h"><h2>${esc(title)}</h2><button class="iconbtn" data-a="closeModal" aria-label="Close">✕</button></div><div class="dr-b" id="modalBody">${body}</div></div></div>`; const f = $('#modalBody input, #modalBody select'); if (f) setTimeout(() => f.focus(), 30); }
+function closeModal() { $('#modalRoot').innerHTML = ''; }
+function closeAll() { UI.drawer = null; ['#drawer', '#cp', '#scrim', '#notif'].forEach(s => { if ($(s)) $(s).hidden = true; }); const r = $('#rail'); if (r) r.classList.remove('open'); }
+function renderNotif() { $('#notif').innerHTML = `<div class="card-h" style="margin:0"><h3>Alerts</h3><button class="btn b-gh b-sm" data-a="readAll">Mark all read</button></div>` + (st().alerts.slice(0, 8).map(a => `<div class="fi" style="cursor:pointer;${a.read ? 'opacity:.6' : ''}" data-a="alertGo" data-id="${a.id}"><i style="background:${LEVEL_COL[a.level]}"></i><div><b>${esc(a.title)}</b><span class="muted small">${esc(a.body)}</span></div><time>${fmt(a.t)}</time></div>`).join('') || '<div class="empty">Nothing yet.</div>'); }
+function renderCodeBlue() {
+  const cb = st().codeBlue, root = $('#codeRoot');
+  if (!cb) { if (root.innerHTML) root.innerHTML = ''; return; }
+  if (root.dataset.t === String(cb.t) && root.innerHTML) return;
+  root.dataset.t = cb.t;
+  root.innerHTML = `<div class="codeblue" role="alertdialog" aria-label="Code Blue"><div style="display:grid;gap:18px;justify-items:center"><h2>CODE BLUE</h2><p style="font-size:1.15rem;max-width:44ch">Resuscitation team to <b>${esc(cb.location)}</b>. Called at ${fmt12(cb.t)} by ${esc(cb.by || 'staff')}.</p>${can('clearCodeBlue') ? '<button class="btn b-lg" style="background:#fff;color:#1D4ED8" data-a="clearCode">Team arrived · clear alert</button>' : '<p>Only clinical staff can clear this alert.</p>'}</div></div>`;
+  announce('Code blue', cb.location, 'en');
+}
+
+/* ============================================================ summary */
+function localSummary() {
+  const s = E.snapshot(st(), now()); const worst = s.departments.slice().sort((a, b) => b.new_arrival_wait_min - a.new_arrival_wait_min)[0]; const fc = Object.entries(s.forecast_next_hours).sort((a, b) => b[1] - a[1])[0];
+  return `Shift summary at ${s.time}\n\n• ${s.today.patients_seen} patients seen, average wait ${s.today.avg_wait_min} min, SLA compliance ${s.today.sla_compliance_pct}%.\n• Busiest: ${worst ? `${worst.name}, ${worst.waiting} waiting, new arrivals wait about ${worst.new_arrival_wait_min} min.` : '—'}\n• Emergency: ${s.emergency.waiting.length} waiting, ${s.ambulances_inbound.length} ambulance(s) inbound.\n• Beds: ${s.beds.map(b => `${b.ward} ${b.free} free`).join(', ')}. ${s.pending_admissions.length} admission(s) pending.\n${fc ? `• Forecast peak around ${hl(+fc[0]).replace('a', ' AM').replace('p', ' PM')} with about ${fc[1]} patients. Staff up 30 minutes before.` : ''}`;
+}
+
+/* ============================================================ Copilot */
+let sampleFn = null, toolsOK = false, cpTurns = [], cpCtl = null;
+function cpModeLabel() { const m = $('#cpMode'); if (!m) return; m.textContent = C.features.copilot ? 'AI · connected to your server' : sampleFn ? (toolsOK ? 'AI · reads and acts on live data' : 'AI · reads live data') : 'Command mode · add an AI key on your server for full AI'; }
+(async () => { try { if (window.claude && window.claude.use) { sampleFn = await window.claude.use('sample'); if (sampleFn) { const lim = await sampleFn.limits().catch(() => null); toolsOK = !!(lim && lim.tools); } } } catch (e) { sampleFn = null; } cpModeLabel(); })();
+const CP_RULES = 'You are RayCare Copilot, the operations assistant inside RayCare OS, a hospital patient-flow app. Staff ask about queues, the emergency department, beds and patients, or ask you to act. Base answers only on the live snapshot or tool results; never invent patients or numbers. When asked to do something (call next, register, assign a bed, open a screen), use the tools. Clinical decisions stay with clinicians. Reply in plain text, under 90 words, short sentences, no markdown headings.';
+function resolveDept(x) { x = String(x || '').toLowerCase().trim(); const d = st().depts.find(d => d.id.toLowerCase() === x || d.name.toLowerCase().includes(x) || (x.length > 3 && x.includes(d.name.toLowerCase().slice(0, 5)))); return d && d.id; }
+const TOOLS = [
+  { name: 'get_snapshot', description: 'Returns the live hospital state: departments, emergency, ambulances, beds, pending admissions and today\'s stats.', execute: () => E.snapshot(st(), now()) },
+  { name: 'call_next', description: 'Calls the next patient in a department queue. Returns the token called.', inputSchema: { type: 'object', properties: { department: { type: 'string' } }, required: ['department'] }, execute: async i => { const id = resolveDept(i.department); if (!id) throw new Error('Unknown department'); return C.dispatch('callNext', { dept: id }); } },
+  { name: 'register_patient', description: 'Registers a walk-in patient and issues a token.', inputSchema: { type: 'object', properties: { name: { type: 'string' }, department: { type: 'string' }, priority: { type: 'boolean' } }, required: ['name', 'department'] }, execute: async i => { const id = resolveDept(i.department); if (!id) throw new Error('Unknown department'); const r = await C.dispatch('registerPatient', { name: String(i.name), dept: id, priority: !!i.priority, source: 'Registered by Copilot' }); UI.slip = r.id; return r; } },
+  { name: 'assign_bed', description: 'Assigns the best free bed to the oldest pending admission, or a given request id.', inputSchema: { type: 'object', properties: { request_id: { type: 'string' } } }, execute: i => C.dispatch('assignBed', { reqId: i.request_id }) },
+  { name: 'open_screen', description: 'Opens a screen: overview, map, queues, doctor, er, beds, appts, patients, phone, analytics, lobby, settings.', inputSchema: { type: 'object', properties: { screen: { type: 'string' } }, required: ['screen'] }, execute: i => { const v = String(i.screen).toLowerCase(); if (!V[v]) throw new Error('Unknown screen'); go(v); return { opened: v }; } }
+];
+const CHIPS = ['Which department needs help right now?', 'Call next in Cardiology', 'Register Anita Sharma to Paediatrics', 'Assign a bed to the oldest admission', 'Summarize the emergency department'];
+function openCopilot(q) { $('#cp').hidden = false; $('#scrim').hidden = false; if (!$('#cpLog').children.length) bubble('a', 'Hi! I watch every queue, bed and ambulance in real time. Ask me anything, or tell me what to do.'); $('#cpChips').innerHTML = CHIPS.map(c => `<button data-a="cpChip" data-q="${esc(c)}">${esc(c)}</button>`).join(''); if (q) cpSend(q); else setTimeout(() => $('#cpInput').focus(), 50); }
+function bubble(r, text) { const b = document.createElement('div'); b.className = 'bub ' + r; b.textContent = text; $('#cpLog').appendChild(b); $('#cpLog').scrollTop = 1e9; return b; }
+async function cpSend(q) {
+  q = String(q || '').trim(); if (!q) return; bubble('u', q); $('#cpInput').value = '';
+  const out = bubble('a', 'Thinking…'); cpTurns.push({ role: 'user', content: q }); if (cpTurns.length > 12) cpTurns = cpTurns.slice(-12);
+  try {
+    if (C.features.copilot) { const r = await C.copilot(cpTurns); (r.actions || []).forEach(a => out.before(Object.assign(document.createElement('div'), { className: 'bub tool', textContent: '→ ' + a.tool + (a.ok ? '' : ' (failed)') }))); out.textContent = r.text; cpTurns.push({ role: 'assistant', content: r.text }); return; }
+    if (!sampleFn) { const t = await localCmd(q); out.textContent = t; cpTurns.push({ role: 'assistant', content: t }); return; }
+    cpCtl = new AbortController(); $('#cpStop').hidden = false;
+    const ctx = [{ role: 'user', content: CP_RULES + '\n\nLive snapshot:\n' + JSON.stringify(E.snapshot(st(), now())) }, ...cpTurns];
+    const opts = { signal: cpCtl.signal, modelTier: 'quick', onText: ({ text }) => { out.textContent = text; $('#cpLog').scrollTop = 1e9; } };
+    if (toolsOK) opts.tools = TOOLS.map(t => ({ ...t, execute: (i, c) => { out.before(Object.assign(document.createElement('div'), { className: 'bub tool', textContent: '→ ' + t.name + (i && Object.keys(i).length ? ' ' + JSON.stringify(i) : '') })); return t.execute(i || {}, c); } })); else opts.cache = false;
+    const { text } = await sampleFn(ctx, opts); out.textContent = text; cpTurns.push({ role: 'assistant', content: text });
+  } catch (e) {
+    cpTurns.pop();
+    if (e && e.code === 'cancelled') out.textContent = (e.text || '') + ' (stopped)';
+    else if (e && ['not_granted', 'sampling_disabled', 'not_declared', 'capability_disabled', 'capability_removed', 'tools_unavailable'].includes(e.code)) { sampleFn = null; cpModeLabel(); out.textContent = await localCmd(q); }
+    else if (e && e.code === 'rate_limited') out.textContent = (e.text ? e.text + '\n\n' : '') + 'I am being rate limited. Try again in a minute.';
+    else if (e && e.code === 'refused') out.textContent = 'I can’t help with that one. Try rephrasing.';
+    else out.textContent = (e && e.text ? e.text + '\n\n' : '') + (e && e.message ? e.message + '\n\n' : '') + await localCmd(q);
+  } finally { $('#cpStop').hidden = true; cpCtl = null; }
+}
+async function localCmd(q) {
+  const s = q.toLowerCase(); let m;
+  if ((m = s.match(/call (?:the )?next(?: patient)?(?: in| for)? (.+)/))) { const id = resolveDept(m[1]); if (!id) return 'I could not find that department.'; const r = await C.dispatch('callNext', { dept: id }).catch(e => ({ err: e.message })); return r.err ? r.err : r.called ? `Called ${r.called} to ${r.room}.` : `${D(id).name} has no one waiting.`; }
+  if ((m = q.match(/register (.+?) (?:to|in|for) (.+)/i))) { const id = resolveDept(m[2]); if (!id) return 'Which department?'; try { const r = await C.dispatch('registerPatient', { name: m[1].slice(0, 80), dept: id, source: 'Registered by Copilot' }); UI.slip = r.id; return `${m[1]} is registered as ${r.tok} in ${D(id).name}. Estimated wait ${r.etaMin} min.`; } catch (e) { return e.message; } }
+  if (/bed/.test(s) && /assign/.test(s)) { try { const r = await C.dispatch('assignBed', {}); return `${r.patient} is assigned bed ${r.bed} in ${r.ward}.`; } catch (e) { return e.message; } }
+  if (/\ber\b|emergency/.test(s)) { const w = E.waiting(st(), 'ER'), amb = E.inboundAmbulances(st()); const bay = servingOf('ER'); return `Emergency: ${bay ? bay.tok + ' is in the resus bay. ' : ''}${w.length} waiting${w.length ? ' (' + [1, 2, 3, 4, 5].map(l => [l, w.filter(v => (v.esi || 4) === l).length]).filter(x => x[1]).map(x => x[1] + '× ESI ' + x[0]).join(', ') + ')' : ''}. ${amb.length} ambulance(s) inbound${amb.length ? ': ' + amb.map(a => a.id + ' in ' + Math.max(0, Math.round((a.arriveAt - now()) / E.MIN)) + ' min').join(', ') : ''}.`; }
+  if (/help|busiest|worst|load|which department/.test(s)) { const r = opd().map(d => ({ d, m: E.newWait(st(), d.id, now()) })).sort((a, b) => b.m - a.m)[0]; const sg = E.suggestion(st(), now()); return r ? `${r.d.name} is busiest: ${E.waiting(st(), r.d.id).length} waiting, about ${r.m} min for new arrivals. ${sg ? 'Suggestion: move a doctor from ' + D(sg.from).name + ' to ' + D(sg.to).name + '.' : 'Load is otherwise balanced.'}` : 'No departments yet.'; }
+  if (/summar/.test(s)) return localSummary();
+  const scr = Object.keys(V).find(k => s.includes(k) || s.includes(V[k].t.toLowerCase())); if (scr) { go(scr); return `Opened ${V[scr].t}.`; }
+  const id = resolveDept(s.replace(/wait|how long|queue|\bin\b/g, '').trim()); if (id) { const d = D(id); const c = servingOf(id); return `${d.name}: ${E.waiting(st(), id).length} waiting, now serving ${c ? c.tok : 'nobody'}, new arrivals wait about ${E.newWait(st(), id, now())} min.`; }
+  return 'In command mode I understand: "call next in cardiology", "register Anita to paediatrics", "assign bed", "emergency status", "which department needs help", "summary", or a screen name like "beds".';
+}
+
+/* ============================================================== actions */
+const A = {
+  go: d => go(d.v), menu: () => { $('#rail').classList.add('open'); $('#scrim').hidden = false; }, closeAll,
+  speed: d => { C.setSpeed(+d.s); $$('[data-a=speed]').forEach(b => b.setAttribute('aria-pressed', String(+b.dataset.s === +d.s))); refresh(); },
+  notif: () => { const n = $('#notif'); n.hidden = !n.hidden; if (!n.hidden) renderNotif(); },
+  readAll: () => run('ackAlerts', {}),
+  alertGo: d => { const a = st().alerts.find(x => x.id === d.id); run('ackAlerts', { id: d.id }); $('#notif').hidden = true; if (a && a.view) go(a.view); },
+  copilot: () => openCopilot(), copilotAsk: d => openCopilot(d.q), cpChip: d => cpSend(d.q), cpStop: () => cpCtl && cpCtl.abort(),
+  room: d => openDrawer('room', d.id), patient: d => openDrawer('patient', d.pid), bed: d => openDrawer('bed', d.id),
+  openRoom: d => { UI.drDept = d.d; closeAll(); go('doctor'); },
+  callNext: d => run('callNext', { dept: d.d }, r => r.called ? `Called ${r.called} to ${r.room}` : 'No one waiting'),
+  callVisit: d => run('callVisit', { id: d.id }, r => `Called ${r.called}`),
+  noShow: d => run('markNoShow', { id: d.id }, r => `${r.tok} marked as no-show`),
+  recall: d => { run('recall', { dept: d.d }, r => `Recalling ${r.tok} on the lobby display`); },
+  complete: d => run('completeVisit', { dept: UI.drDept, outcome: d.o, callNext: true }, r => `${r.completed}: ${r.outcome}${r.outcome === 'Admit' ? ' · bed requested' : ''}${r.next ? ' · called ' + r.next : ''}`),
+  prepBay: d => run('prepareBay', { id: d.id }, 'Resus bay prepared'),
+  preAlert: () => modal('Ambulance pre-alert', `<form class="f" data-form="preAlert"><div class="field"><label for="paFrom">From</label><input type="text" id="paFrom" value="108 · " required maxlength="60"></div><div class="field"><label for="paC">Condition</label><input type="text" id="paC" placeholder="e.g. Road traffic accident, 2 injured" required maxlength="120"></div><div class="r2"><div class="field"><label for="paE">ESI</label><select id="paE">${[1, 2, 3, 4, 5].map(l => `<option value="${l}" ${l === 2 ? 'selected' : ''}>ESI ${l} · ${E.ESI_LABEL[l]}</option>`).join('')}</select></div><div class="field"><label for="paT">ETA (minutes)</label><input type="number" id="paT" value="10" min="1" max="240"></div></div><button class="btn b-sig" type="submit">Alert the emergency team</button></form>`),
+  codeBlue: () => modal('Call Code Blue', `<form class="f" data-form="codeBlue"><div class="field"><label for="cbLoc">Location</label><input type="text" id="cbLoc" value="${UI.view === 'er' ? 'Emergency, resus bay' : 'OPD Block A'}" required maxlength="60"></div><p class="muted small">Every RayCare screen in the hospital shows the alert immediately.</p><button class="btn b-crit b-lg" type="submit">Call Code Blue</button></form>`),
+  clearCode: () => run('clearCodeBlue', {}, 'Code Blue cleared'),
+  assignBed: d => run('assignBed', { reqId: d.id, bedId: d.bed }, r => `Assigned ${r.bed} to ${r.patient}`).then(r => { if (r && UI.drawer) closeAll(); }),
+  discharge: d => run('dischargeBed', { bedId: d.id }, r => `${r.bed} sent for cleaning`),
+  bedReady: d => run('markBedReady', { bedId: d.id }, r => `${r.bed} is ready`),
+  slot: d => { const a = st().appts.find(x => x.id === d.id); if (!a) return;
+    if (a.status === 'open') modal('Book ' + fmt12(a.t) + ' · ' + D(a.dept).doc, `<form class="f" data-form="book" data-id="${a.id}"><div class="field"><label for="bkN">Patient name</label><input type="text" id="bkN" required maxlength="80"></div><div class="field"><label for="bkP">Mobile</label><input type="tel" id="bkP" maxlength="14"></div><button class="btn b-pri" type="submit">Confirm booking</button></form>`);
+    else if (a.status === 'booked') run('checkInAppointment', { slotId: a.id }, r => `Checked in as ${r.tok}`);
+    else if (a.visitId && st().visits[a.visitId]) openDrawer('patient', st().visits[a.visitId].pid); },
+  pick: d => { UI.papp.id = d.id; refresh(); }, follow: d => { UI.papp.id = d.id; closeAll(); go('phone'); }, plang: d => { UI.papp.lang = d.l; refresh(); },
+  late: d => run('runningLate', { id: d.id }, 'Moved back three places. The turn is kept.'),
+  rate: d => run('submitFeedback', { id: d.id, stars: +d.s }, 'Thanks for the rating'),
+  testVoice: () => { const c = st().lastCalls[0]; toast(announce(c ? c.tok : 'C-105', c ? c.room : 'OPD 4', 'en') ? 'Playing announcement' : 'Voice is not available in this browser'); },
+  fullscreen: () => { const el = $('#tvWrap'); try { const p = el.requestFullscreen && el.requestFullscreen(); if (p && p.catch) p.catch(() => toast('Full screen is not available here')); else if (!p) toast('Full screen is not available here'); } catch (e) { toast('Full screen is not available here'); } },
+  printSlip: () => { try { window.print(); } catch (e) { /* ignore */ } },
+  summary: async () => {
+    modal('Shift summary', `<div id="sumOut" style="white-space:pre-wrap;line-height:1.6">${sampleFn || C.features.copilot ? 'Thinking…' : esc(localSummary())}</div><p class="muted small" id="sumNote">${sampleFn || C.features.copilot ? 'Written by Copilot from live data.' : 'Generated from live data.'}</p>`);
+    const prompt = 'Write a hospital shift handover summary for the medical superintendent. Use 5 short lines starting with "• ": throughput and waits, the busiest department with one concrete action, emergency and ambulances, beds and pending admissions, and the forecast peak with a staffing action. Plain text, under 120 words.';
+    try {
+      if (C.features.copilot) { const r = await C.copilot([{ role: 'user', content: prompt }]); $('#sumOut').textContent = r.text; return; }
+      if (sampleFn) await sampleFn(prompt + '\n\nLive data:\n' + JSON.stringify(E.snapshot(st(), now())), { cache: false, onText: ({ text }) => { const o = $('#sumOut'); if (o) o.textContent = text; } });
+    } catch (e) { const o = $('#sumOut'); if (o) { o.textContent = localSummary(); $('#sumNote').textContent = 'Generated from live data.'; } }
+  },
+  exportCsv: async () => { const k = E.dayKey(now()); try { await C.exportCsv(k, k); toast('Export downloaded'); } catch (e) { toast(e.message, true); } },
+  searchHistory: async () => { const q = $('#ptQ').value.trim(); const box = $('#pt-h'); box.dataset.q = q; box.innerHTML = '<p class="muted small">Searching…</p>'; try { const ps = await C.searchPatients(q); box.innerHTML = `<h3 style="margin-bottom:8px">All records matching “${esc(q)}”</h3>` + (ps.length ? `<div class="tbl-wrap"><table class="tbl"><thead><tr><th>MRN</th><th>Name</th><th>Mobile</th><th>Visits</th></tr></thead><tbody>${ps.map(p => `<tr class="click" data-a="patient" data-pid="${p.pid}"><td class="mono">${p.pid}</td><td><b>${esc(p.name)}</b></td><td class="mono">${esc(E.maskPhone(p.phone) || '—')}</td><td>${(p.visits || []).length}</td></tr>`).join('')}</tbody></table></div>` : '<div class="empty">No records found.</div>'); } catch (e) { box.innerHTML = `<div class="empty">${esc(e.message)}</div>`; } },
+  loadHistory: async d => { const box = $('#histBox'); box.innerHTML = '<p class="muted small">Loading…</p>'; try { const vs = await C.patientHistory(d.pid); box.dataset.loaded = 1; box.innerHTML = `<h3 style="margin-bottom:8px">Visit history</h3>` + (vs.length ? `<div class="tbl-wrap"><table class="tbl"><thead><tr><th>Date</th><th>Token</th><th>Department</th><th>Outcome</th></tr></thead><tbody>${vs.map(v => `<tr><td class="mono">${v.day.slice(6)}/${v.day.slice(4, 6)}/${v.day.slice(0, 4)}</td><td class="mono">${v.tok}</td><td>${esc(D(v.dept) ? D(v.dept).name : v.dept)}</td><td class="muted">${esc(v.outcome || v.status)}</td></tr>`).join('')}</tbody></table></div>` : '<div class="empty">No earlier visits.</div>'); } catch (e) { box.innerHTML = `<div class="empty">${esc(e.message)}</div>`; } },
+  overrideEsi: d => modal('Change ESI level', `<form class="f" data-form="esi" data-id="${d.id}"><div class="field"><label for="esL">New level</label><select id="esL">${[1, 2, 3, 4, 5].map(l => `<option value="${l}">ESI ${l} · ${E.ESI_LABEL[l]}</option>`).join('')}</select></div><div class="field"><label for="esR">Reason (logged)</label><input type="text" id="esR" required maxlength="200" placeholder="e.g. ECG shows STEMI"></div><button class="btn b-pri" type="submit">Save override</button></form>`),
+  copy: (d, el) => { const t = d.v; const done = () => { el.textContent = 'Copied'; setTimeout(() => { el.textContent = 'Copy'; }, 1500); }; try { navigator.clipboard.writeText(t).then(done, () => { el.previousElementSibling.select(); toast('Press Ctrl+C to copy'); }); } catch (e) { el.previousElementSibling.select(); } },
+  poster: () => { const url = C.mode === 'remote' ? location.origin + '/checkin/' : 'https://your-server/checkin/'; modal('QR check-in poster', `<div class="poster" id="poster"><b style="font:800 1.4rem var(--f-display)">${esc(st().hospital.name)}</b><div>${qrSvg(url, 6)}</div><b style="font:800 1.6rem var(--f-display)">Scan to get your token</b><div class="ind">टोकन के लिए स्कैन करें · టోకెన్ కోసం స్కాన్ చేయండి</div><div class="mono small">${esc(url)}</div><div class="small">No app needed. Wait anywhere, we will message you before your turn.</div></div><div class="acts" style="justify-content:center"><button class="btn b-pri" data-a="printSlip">Print poster</button></div>`); },
+  wizardDemo: () => renderWizard({ templates: E.TEMPLATES, langs: E.LANGS }, true),
+  resetDemo: () => modal('Reset the demo?', '<p>This starts a fresh simulated morning shift.</p><div class="acts" style="justify-content:flex-start"><button class="btn b-crit" data-a="resetYes">Reset</button><button class="btn b-gh" data-a="closeModal">Cancel</button></div>'),
+  resetYes: () => { closeModal(); C.reset(); },
+  logout: () => { C.logout(); },
+  closeModal, closeModalBg: (d, el, e) => { if (e.target === el) closeModal(); }
+};
+document.addEventListener('click', e => { const el = e.target.closest('[data-a]'); if (!el) return; const f = A[el.dataset.a]; if (f) { if (el.tagName === 'A') e.preventDefault(); f(el.dataset, el, e); } });
+document.addEventListener('keydown', e => {
+  if (!C || !C.state || !$('#cp')) return;
+  if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); openCopilot(); }
+  if (e.key === 'Escape') { closeModal(); closeAll(); }
+  if ((e.key === 'Enter' || e.key === ' ') && e.target.matches && e.target.matches('g[data-a]')) { e.preventDefault(); e.target.dispatchEvent(new MouseEvent('click', { bubbles: true })); }
+});
+document.addEventListener('submit', async e => {
+  const f = e.target.closest('[data-form]'); if (!f) return; e.preventDefault();
+  const btn = f.querySelector('button[type=submit]'); if (btn) btn.disabled = true;
+  try {
+    const t = f.dataset.form, val = s => ($(s) || {}).value;
+    if (t === 'register') { const r = await run('registerPatient', { name: val('#rgName'), phone: val('#rgPhone'), age: val('#rgAge'), sex: val('#rgSex'), abha: val('#rgAbha'), dept: val('#rgDept'), lang: (document.querySelector('input[name=rgLang]:checked') || {}).value, priority: (document.querySelector('input[name=rgPri]:checked') || {}).value === '1' }, r => `Token ${r.tok} issued · about ${r.etaMin} min`); if (r) { UI.slip = r.id; f.reset(); $('#rgName').focus(); refresh(); } }
+    if (t === 'triage') { const r = await run('triage', triageInput(), r => r.level <= 2 ? `ESI ${r.level}: duty team alerted` : `${r.tok} added at ESI ${r.level}`); if (r) renderTriage(); }
+    if (t === 'book') { if (await run('bookAppointment', { slotId: f.dataset.id, name: val('#bkN'), phone: val('#bkP') }, 'Appointment booked')) closeModal(); }
+    if (t === 'preAlert') { if (await run('ambulancePreAlert', { from: val('#paFrom'), complaint: val('#paC'), esi: val('#paE'), etaMin: val('#paT') }, r => `${r.id} logged. Team alerted.`)) closeModal(); }
+    if (t === 'codeBlue') { closeModal(); await run('codeBlue', { location: val('#cbLoc') }); }
+    if (t === 'esi') { if (await run('overrideEsi', { id: f.dataset.id, esi: val('#esL'), reason: val('#esR') }, r => `${r.tok} is now ESI ${r.esi}`)) closeModal(); }
+    if (t === 'settings') { const langs = ['en', ...$$('input[name=sLang]:checked').map(x => x.value).filter(x => x !== 'en')]; if (await run('updateSettings', { name: val('#sName'), city: val('#sCity'), sla: { busy: +val('#slB'), over: +val('#slO') }, langs, publicCheckin: $('#sQR').checked }, 'Settings saved')) { renderShell(); go('settings'); } }
+    if (t === 'addDept') { if (await run('addDepartment', { id: val('#adId'), room: val('#adRoom'), doc: val('#adDoc') }, r => `${r.dept.name} added`)) go('settings'); }
+    if (t === 'addUser') { try { await C.createUser({ name: val('#uName'), email: val('#uEmail'), role: val('#uRole'), dept: val('#uDept') || null, password: val('#uPass') }); toast('Account created. Share the email and temporary password with them.'); f.reset(); delete $('#st-u').dataset.loaded; loadUsers(); } catch (err) { toast(err.message, true); } }
+  } finally { if (btn) btn.disabled = false; }
+});
+document.addEventListener('input', e => {
+  const t = e.target;
+  if (t.closest('#trForm')) renderTriage();
+  if (t.dataset.in === 'ptQ') V.patients.live();
+  if (t.dataset.in === 'slB') $('#slBv').textContent = t.value;
+  if (t.dataset.in === 'slO') $('#slOv').textContent = t.value;
+});
+document.addEventListener('change', async e => {
+  const t = e.target, c = t.dataset.ch; if (!c) return;
+  if (c === 'drDept') { UI.drDept = t.value; go('doctor'); }
+  if (c === 'drAuto') { C.setManual(UI.drDept, !t.checked); toast(t.checked ? 'The simulated doctor runs this room' : 'You are running this room'); }
+  if (c === 'refer' && t.value) run('completeVisit', { dept: UI.drDept, referTo: t.value, callNext: true }, r => `Referred as ${r.referred} with priority`);
+  if (c === 'apDept') { UI.apDept = t.value; V.appts.live(); }
+  if (c === 'ptF') V.patients.live();
+  if (c === 'voice') { UI.voice = t.checked; toast(t.checked ? 'Announcements on' : 'Announcements off'); }
+  if (c === 'dAvg') run('updateDepartment', { id: t.dataset.d, avg: t.value }, 'Saved');
+  if (c === 'dRoom') run('updateDepartment', { id: t.dataset.d, room: t.value }, 'Saved');
+  if (c === 'dDoc') run('updateDepartment', { id: t.dataset.d, doc: t.value }, 'Saved');
+  if (c === 'dOpen') run('updateDepartment', { id: t.dataset.d, open: t.checked }, r => `${r.dept.name} ${r.dept.open ? 'open' : 'closed'}`);
+  if (c === 'uActive') { try { await C.updateUser(t.dataset.id, { active: t.checked }); toast(t.checked ? 'Account enabled' : 'Account disabled'); } catch (err) { t.checked = !t.checked; toast(err.message, true); } }
+});
+
+/* ======================================================= login & wizard */
+const SIDE = `<div class="auth-side"><a class="brandmark" href="/">${LOGO} RayCare OS</a><div style="display:grid;gap:22px"><h2>Every patient knows their turn.</h2><ul><li>Live queues with honest wait times</li><li>Emergency triage by acuity, not arrival</li><li>Beds, appointments and lobby screens in one place</li><li>Messages in English, हिन्दी and తెలుగు</li></ul></div><p class="small" style="color:#6F80B6">Built on research published at the ORCHIDS International Conference.</p></div>`;
+function renderLogin(status) {
+  if ($('#loginForm') && !status) return; // keep what the user is typing
+  $('#root').innerHTML = `<div class="auth">${SIDE}<div class="auth-main"><div class="auth-card"><div><h1>Sign in</h1><p class="muted" style="margin-top:6px">Use the account your hospital administrator created for you.</p></div>
+    <form class="f" id="loginForm"><div class="field"><label for="lgE">Email</label><input type="email" id="lgE" required autocomplete="username"></div><div class="field"><label for="lgP">Password</label><input type="password" id="lgP" required autocomplete="current-password"></div><p class="err" id="lgErr" hidden></p><button class="btn b-pri b-lg" type="submit">Sign in</button></form>
+    ${status && status.demo ? `<div class="card" style="display:grid;gap:10px"><b>Demo server</b><p class="muted small">Sign in as any role. Password is demo1234.</p><div class="acts" style="justify-content:flex-start">${['admin', 'desk', 'doctor', 'nurse'].map(r => `<button class="btn b-gh b-sm" data-demo="${r}">${E.ROLES[r]}</button>`).join('')}</div></div>` : ''}
+    <p class="muted small">Forgot your password? Ask your administrator to reset it in Settings. Administrators can run <span class="mono">npm run reset-admin</span> on the server.</p></div></div></div>`;
+  const submit = async (email, pw) => { const err = $('#lgErr'); err.hidden = true; try { await C.login(email, pw); startApp(); } catch (e) { err.textContent = e.message; err.hidden = false; } };
+  $('#loginForm').addEventListener('submit', e => { e.preventDefault(); submit($('#lgE').value, $('#lgP').value); });
+  $$('[data-demo]').forEach(b => b.addEventListener('click', () => submit(b.dataset.demo + '@demo.local', 'demo1234')));
+  setTimeout(() => $('#lgE') && $('#lgE').focus(), 30);
+}
+function renderWizard(status, demoPreview) {
+  const W = { step: 0, h: { name: '', city: '', publicCheckin: true }, sel: { GEN: true, PED: true, CAR: true, ORT: true }, rooms: {}, docs: {}, wards: { ICU: 8, GW: 20, PW: 10 }, langs: { en: true, hi: true, te: true }, admin: { name: '', email: '', password: '' } };
+  const T = status.templates || E.TEMPLATES, LG = status.langs || E.LANGS;
+  const titles = ['Your hospital', 'Departments', 'Wards and languages', 'Administrator account'];
+  function draw(err) {
+    const sel = Object.keys(W.sel).filter(k => W.sel[k]);
+    const body = [
+      `<div class="field"><label for="wzN">Hospital name</label><input type="text" id="wzN" value="${esc(W.h.name)}" placeholder="e.g. Sunrise Multispeciality Hospital" maxlength="80" required></div><div class="field"><label for="wzC">City</label><input type="text" id="wzC" value="${esc(W.h.city)}" placeholder="e.g. Hyderabad" maxlength="60"></div><label class="tog"><input type="checkbox" id="wzQ" ${W.h.publicCheckin ? 'checked' : ''}> Let patients check in by scanning a QR code</label>`,
+      `<p class="muted small">Pick the OPD departments you run. Emergency is always included. You can add more later.</p><div class="tpl">${Object.entries(T).map(([k, t]) => `<label><input type="checkbox" data-w="sel" value="${k}" ${W.sel[k] ? 'checked' : ''}><span class="ddot" style="background:${t.color}"></span>${esc(t.name)}</label>`).join('')}</div>
+       ${sel.length ? `<div style="display:grid;gap:8px;margin-top:6px"><div class="drow muted small"><span>Department</span><span>Room</span><span>Doctor</span></div>${sel.map((k, i) => `<div class="drow"><b>${esc(T[k].name)}</b><input type="text" data-w="room" data-k="${k}" value="${esc(W.rooms[k] || 'OPD ' + (i + 1))}" aria-label="Room for ${esc(T[k].name)}" maxlength="30"><input type="text" data-w="doc" data-k="${k}" value="${esc(W.docs[k] || '')}" placeholder="Dr. Name" aria-label="Doctor for ${esc(T[k].name)}" maxlength="60"></div>`).join('')}</div>` : ''}`,
+      `<div class="r3">${[['ICU', 'ICU beds'], ['GW', 'General ward beds'], ['PW', 'Paediatric beds']].map(([k, n]) => `<div class="field"><label for="wz${k}">${n}</label><input type="number" id="wz${k}" data-w="ward" data-k="${k}" min="0" max="500" value="${W.wards[k]}"></div>`).join('')}</div><div class="field"><span class="flabel">Languages for patient messages and screens</span><div style="display:flex;gap:14px;flex-wrap:wrap;margin-top:4px">${Object.entries(LG).map(([k, n]) => `<label class="tog"><input type="checkbox" data-w="lang" value="${k}" ${W.langs[k] ? 'checked' : ''} ${k === 'en' ? 'disabled' : ''}> ${n}</label>`).join('')}</div></div>`,
+      `<div class="field"><label for="wzAN">Your name</label><input type="text" id="wzAN" value="${esc(W.admin.name)}" maxlength="80" autocomplete="name"></div><div class="field"><label for="wzAE">Email</label><input type="email" id="wzAE" value="${esc(W.admin.email)}" autocomplete="username"></div><div class="field"><label for="wzAP">Password</label><input type="password" id="wzAP" value="${esc(W.admin.password)}" minlength="8" autocomplete="new-password"><span class="muted small">At least 8 characters. You will create accounts for your staff after this.</span></div>`
+    ][W.step];
+    $('#root').innerHTML = `<div class="auth">${SIDE}<div class="auth-main"><div class="auth-card wide"><div class="steps">${titles.map((x, i) => `<i class="${i <= W.step ? 'on' : ''}"></i>`).join('')}</div>
+      <div><span class="muted small">Step ${W.step + 1} of 4${demoPreview ? ' · demo preview' : ''}</span><h1 style="margin-top:4px">${titles[W.step]}</h1>${W.step === 0 ? '<p class="muted" style="margin-top:6px">Setup takes about three minutes. You can change everything later in Settings.</p>' : ''}</div>
+      <form class="f" id="wzForm">${body}<p class="err" ${err ? '' : 'hidden'}>${esc(err || '')}</p><div class="acts" style="justify-content:space-between">${W.step ? '<button class="btn b-gh" type="button" id="wzBack">Back</button>' : (demoPreview ? '<button class="btn b-gh" type="button" id="wzCancel">Cancel</button>' : '<span></span>')}<button class="btn b-pri b-lg" type="submit">${W.step === 3 ? 'Finish setup' : 'Continue'}</button></div></form></div></div></div>`;
+    $('#wzForm').addEventListener('submit', next);
+    const b = $('#wzBack'); if (b) b.addEventListener('click', () => { save(); W.step--; draw(); });
+    const cc = $('#wzCancel'); if (cc) cc.addEventListener('click', () => startApp());
+    $('#wzForm').addEventListener('change', ev => { if (ev.target.dataset.w === 'sel') { save(); W.sel[ev.target.value] = ev.target.checked; draw(); } });
+    const first = $('#wzForm input:not([type=checkbox])'); if (first) first.focus();
+  }
+  function save() {
+    const v = s => ($(s) || {}).value;
+    if (W.step === 0) { W.h.name = v('#wzN').trim(); W.h.city = v('#wzC').trim(); W.h.publicCheckin = $('#wzQ').checked; }
+    if (W.step === 1) { $$('[data-w=room]').forEach(i => { W.rooms[i.dataset.k] = i.value; }); $$('[data-w=doc]').forEach(i => { W.docs[i.dataset.k] = i.value; }); }
+    if (W.step === 2) { $$('[data-w=ward]').forEach(i => { W.wards[i.dataset.k] = +i.value || 0; }); Object.keys(LG).forEach(k => { W.langs[k] = k === 'en' || !!$(`[data-w=lang][value=${k}]:checked`); }); }
+    if (W.step === 3) { W.admin = { name: v('#wzAN').trim(), email: v('#wzAE').trim(), password: v('#wzAP') }; }
+  }
+  async function next(e) {
+    e.preventDefault(); save();
+    if (W.step === 0 && W.h.name.length < 2) return draw('Enter your hospital name.');
+    if (W.step === 1 && !Object.values(W.sel).some(Boolean)) return draw('Choose at least one department.');
+    if (W.step < 3) { W.step++; return draw(); }
+    if (W.admin.name.length < 2 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(W.admin.email) || W.admin.password.length < 8) return draw('Enter your name, a valid email and a password of at least 8 characters.');
+    const cfg = { hospital: { name: W.h.name, city: W.h.city, publicCheckin: W.h.publicCheckin, langs: Object.keys(W.langs).filter(k => W.langs[k]) }, depts: Object.keys(W.sel).filter(k => W.sel[k]).map((k, i) => ({ id: k, room: W.rooms[k] || 'OPD ' + (i + 1), doc: W.docs[k] || 'Duty doctor' })), wards: W.wards, admin: W.admin };
+    try { $('#wzForm button[type=submit]').disabled = true; await C.finishSetup(cfg); UI.view = 'settings'; startApp(); toast('Your hospital is ready. Next: create staff accounts and put up the QR poster.'); }
+    catch (err) { draw(err.message); }
+  }
+  draw();
+}
+
+/* ================================================================== boot */
+let started = false;
+function startApp() {
+  renderShell(); go(allowed(UI.view) ? UI.view : firstFor(role()));
+  UI.lastCallT = (st().lastCalls[0] || {}).t || 0;
+  if (!started) { started = true; setInterval(() => { if (C.state && $('#main')) refresh(); }, 1000); setInterval(() => { UI.tvi = (UI.tvi + 1) % 3; }, 3500); }
+}
+(async function boot() {
+  const hash = (location.hash || '').slice(1); if (V[hash]) UI.view = hash;
+  C = await RayCareClient.connect();
+  C.onChange(why => {
+    if (why === 'logout' || why === 'expired') { renderLogin(); if (why === 'expired') toast('Your session ended. Please sign in again.', true); return; }
+    if (why === 'load' && !$('#main')) return;
+    if (why === 'load') { renderShell(); go(UI.view); return; }
+    if ($('#main')) refresh();
+  });
+  if (C.mode === 'demo') return startApp();
+  try {
+    const status = await C.setupStatus();
+    if (!status.setupComplete) return renderWizard(status);
+    if (!C.signedIn) return renderLogin(status);
+    await C.load(); startApp();
+  } catch (e) { renderLogin(); }
+})();
+})();
+</script>
+</body>
+</html>

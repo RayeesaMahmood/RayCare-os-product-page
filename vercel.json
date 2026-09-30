@@ -1,0 +1,7 @@
+{
+  "buildCommand": "node scripts/build-static.js",
+  "outputDirectory": "dist",
+  "installCommand": "echo 'no install needed for the static demo'",
+  "cleanUrls": false,
+  "trailingSlash": true
+}

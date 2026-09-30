@@ -1,0 +1,668 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>RayCare OS</title>
+<meta name="description" content="RayCare OS is the patient flow operating system for hospitals: live queues with honest wait times, ESI emergency triage, beds, appointments, lobby screens and multilingual patient updates. Self-hosted, installs in minutes.">
+<meta property="og:title" content="RayCare OS · Patient flow for hospitals">
+<meta property="og:description" content="Every patient knows their turn. Every department knows its load.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='9' fill='%231D4ED8'/%3E%3Cpath d='M8 22a12 12 0 0 1 16-11' stroke='%23FF8A45' stroke-width='3' fill='none' stroke-linecap='round'/%3E%3Ccircle cx='9' cy='22' r='2.4' fill='%23fff'/%3E%3Ccircle cx='16' cy='22' r='2.4' fill='%23fff'/%3E%3Ccircle cx='23' cy='22' r='2.4' fill='%23fff'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Figtree:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&family=Noto+Sans+Devanagari:wght@600&family=Noto+Sans+Telugu:wght@600&display=swap">
+<style>
+/* Layout: sticky nav → split hero (copy + live product composite) → compatibility strip → problem/outcome → role journey tabs → bento features → install paths → architecture → ROI → pricing → trust → FAQ → CTA */
+:root{
+  --bg:#F4F6FA; --paper:#FFFFFF; --sunk:#EBEFF6; --ink:#0A1633; --ink-2:#2A3857; --muted:#5A6781; --line:#DCE2EE;
+  --brand:#1D4ED8; --brand-2:#3B6FF5; --brand-soft:#E3EAFF; --signal:#E8641A; --signal-soft:#FFECE0;
+  --night:#07112B; --night-2:#0E1C40; --night-line:#1B2A55; --night-text:#A9B7DE; --led:#FFB547;
+  --ok:#15803D; --warn:#B7791F; --crit:#D92D20;
+  --f-display:"Bricolage Grotesque","Segoe UI",system-ui,sans-serif;
+  --f-body:"Figtree","Segoe UI",system-ui,sans-serif;
+  --f-mono:"JetBrains Mono",ui-monospace,Menlo,Consolas,monospace;
+  --f-indic:"Noto Sans Devanagari","Noto Sans Telugu",system-ui,sans-serif;
+  --shadow-lg:0 2px 4px rgba(10,22,51,.04),0 30px 60px -24px rgba(10,22,51,.28);
+  --shadow:0 1px 2px rgba(10,22,51,.05),0 12px 28px -16px rgba(10,22,51,.22);
+  --maxw:1200px; color-scheme:light;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#050B19; --paper:#0C1529; --sunk:#0A1224; --ink:#E8EDF8; --ink-2:#C4CEE3; --muted:#95A2BD; --line:#1D2B48;
+  --brand:#7A9BFF; --brand-2:#9DB5FF; --brand-soft:#14224A; --signal:#FF8A45; --signal-soft:#341C0F;
+  --night:#030817; --night-2:#0A1532; --ok:#4ADE80; --warn:#F2C14E; --crit:#FF6B5E;
+  --shadow-lg:0 2px 4px rgba(0,0,0,.3),0 30px 60px -24px rgba(0,0,0,.8); --shadow:0 1px 2px rgba(0,0,0,.4),0 12px 28px -16px rgba(0,0,0,.7); color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#050B19; --paper:#0C1529; --sunk:#0A1224; --ink:#E8EDF8; --ink-2:#C4CEE3; --muted:#95A2BD; --line:#1D2B48;
+  --brand:#7A9BFF; --brand-2:#9DB5FF; --brand-soft:#14224A; --signal:#FF8A45; --signal-soft:#341C0F;
+  --night:#030817; --night-2:#0A1532; --ok:#4ADE80; --warn:#F2C14E; --crit:#FF6B5E;
+  --shadow-lg:0 2px 4px rgba(0,0,0,.3),0 30px 60px -24px rgba(0,0,0,.8); --shadow:0 1px 2px rgba(0,0,0,.4),0 12px 28px -16px rgba(0,0,0,.7); color-scheme:dark}
+
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.6 var(--f-body);-webkit-font-smoothing:antialiased}
+.wrap{max-width:var(--maxw);margin:0 auto;padding-inline:20px}
+h1,h2,h3,h4{font-family:var(--f-display);margin:0;letter-spacing:-.022em;line-height:1.06;text-wrap:balance}
+h2{font-size:clamp(2rem,3.8vw,3rem);font-weight:800}
+h3{font-size:1.15rem;font-weight:700;letter-spacing:-.01em;line-height:1.25}
+p{margin:0}
+a{color:var(--brand)}
+.mono{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+.eyebrow{display:inline-flex;align-items:center;gap:8px;font:700 .76rem/1 var(--f-body);letter-spacing:.14em;text-transform:uppercase;color:var(--signal)}
+.eyebrow::before{content:"";width:18px;height:2px;background:currentColor;border-radius:2px}
+.lede{font-size:1.1rem;color:var(--muted);max-width:60ch}
+section{padding-block:104px}
+.sec-head{display:grid;gap:16px;max-width:780px;margin-bottom:48px}
+:focus-visible{outline:3px solid var(--signal);outline-offset:3px;border-radius:6px}
+
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:9px;border:1px solid transparent;border-radius:12px;padding:13px 20px;font:700 .95rem/1 var(--f-body);cursor:pointer;text-decoration:none;white-space:nowrap;transition:transform .15s,box-shadow .15s,background .15s,border-color .15s}
+.btn:hover{transform:translateY(-1px)}
+.btn-primary{background:var(--brand);color:#fff;box-shadow:0 8px 20px -10px color-mix(in srgb,var(--brand) 70%,transparent)}
+:root[data-theme="dark"] .btn-primary{color:#06102A}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .btn-primary{color:#06102A}}
+.btn-ghost{background:var(--paper);color:var(--ink);border-color:var(--line)}
+.btn-ghost:hover{border-color:var(--ink-2)}
+.btn-sm{padding:9px 14px;font-size:.86rem;border-radius:10px}
+.btn svg{flex:none}
+
+/* nav */
+.nav{position:sticky;top:env(safe-area-inset-top,0px);z-index:40;background:color-mix(in srgb,var(--bg) 84%,transparent);backdrop-filter:saturate(1.4) blur(12px);border-bottom:1px solid color-mix(in srgb,var(--line) 70%,transparent)}
+.nav .wrap{display:flex;align-items:center;gap:28px;height:68px}
+.logo{display:flex;align-items:center;gap:10px;text-decoration:none;color:var(--ink);font:800 1.2rem/1 var(--f-display);letter-spacing:-.02em}
+.logo small{font:700 .62rem/1 var(--f-body);letter-spacing:.14em;color:var(--signal);border:1px solid var(--line);padding:3px 5px;border-radius:5px}
+.nav-links{display:flex;gap:26px;margin-left:12px}
+.nav-links a{color:var(--muted);text-decoration:none;font-weight:600;font-size:.93rem}
+.nav-links a:hover{color:var(--ink)}
+.nav-cta{margin-left:auto;display:flex;gap:10px;align-items:center}
+@media (max-width:980px){.nav-links{display:none}}
+@media (max-width:480px){.nav-cta .btn-ghost{display:none}}
+
+/* hero */
+.hero{padding-block:72px 88px;position:relative;overflow:hidden}
+.hero::before{content:"";position:absolute;inset:-20% -10% auto auto;width:760px;height:760px;background:radial-gradient(closest-side,color-mix(in srgb,var(--brand-2) 18%,transparent),transparent);pointer-events:none}
+.hero .wrap{display:grid;grid-template-columns:minmax(0,.92fr) minmax(0,1.2fr);gap:56px;align-items:center;position:relative}
+.hero h1{font-size:clamp(2.5rem,4.7vw,3.9rem);font-weight:800;letter-spacing:-.035em}
+.hero h1 .hl{color:var(--brand);position:relative;white-space:nowrap}
+.hero h1 .hl::after{content:"";position:absolute;left:0;right:0;bottom:.06em;height:.12em;background:var(--led);border-radius:4px;z-index:-1;opacity:.55}
+.hero-copy{display:grid;gap:26px;min-width:0}
+.hero-cta{display:flex;gap:12px;flex-wrap:wrap}
+.research{display:flex;gap:12px;align-items:center;padding:12px 14px;border:1px solid var(--line);border-radius:14px;background:var(--paper);max-width:520px;text-decoration:none;color:var(--ink)}
+.research .badge{flex:none;width:38px;height:38px;border-radius:10px;background:var(--signal-soft);color:var(--signal);display:grid;place-items:center}
+.research b{display:block;font-size:.9rem}
+.research span{font-size:.82rem;color:var(--muted)}
+@media (max-width:1020px){.hero .wrap{grid-template-columns:1fr}}
+
+/* hero composite */
+.stage{position:relative;min-height:520px;min-width:0}
+.win{position:absolute;inset:42px 64px 30px 0;background:var(--paper);border:1px solid var(--line);border-radius:18px;box-shadow:var(--shadow-lg);overflow:hidden;display:grid;grid-template-rows:auto 1fr}
+.win-bar{display:flex;align-items:center;gap:7px;padding:10px 14px;border-bottom:1px solid var(--line);background:var(--sunk)}
+.win-bar i{width:10px;height:10px;border-radius:50%;background:var(--line)}
+.win-bar .url{margin-left:10px;flex:1;max-width:320px;background:var(--paper);border:1px solid var(--line);border-radius:7px;padding:4px 10px;font:500 .74rem var(--f-mono);color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.win-body{display:grid;grid-template-columns:52px minmax(0,1fr);min-height:0}
+.mini-rail{background:var(--night);display:grid;align-content:start;gap:12px;padding:14px 0;justify-items:center}
+.mini-rail i{width:22px;height:22px;border-radius:7px;background:var(--night-2)}
+.mini-rail i.on{background:#1D4ED8;box-shadow:0 0 0 2px var(--led)}
+.win-main{padding:18px 20px;display:grid;gap:14px;align-content:start;min-width:0}
+.win-main h4{font-size:1.02rem}
+.tiles{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.tile{border:1px solid var(--line);border-radius:10px;padding:9px 10px;min-width:0}
+.tile span{display:block;font-size:.64rem;color:var(--muted);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tile b{font:800 1.3rem/1.2 var(--f-display);font-variant-numeric:tabular-nums}
+.loads{display:grid;gap:7px}
+.er-line{display:flex;gap:10px;align-items:center;flex-wrap:wrap;border-top:1px dashed var(--line);padding-top:12px;font-size:.76rem;color:var(--muted)}
+.er-line b{color:var(--ink)}
+.er-line .esi{color:#fff;font:800 .7rem var(--f-display);border-radius:6px;padding:3px 6px}
+.load{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,2fr) 52px;gap:10px;align-items:center;font-size:.76rem}
+.load .nm{display:flex;gap:7px;align-items:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:600}
+.dot{width:8px;height:8px;border-radius:3px;flex:none}
+.track{height:7px;border-radius:99px;background:var(--sunk);overflow:hidden}
+.track i{display:block;height:100%;border-radius:99px;transition:width .6s ease}
+.pill{font:700 .66rem/1 var(--f-mono);padding:4px 6px;border-radius:99px;text-align:center}
+.p-ok{color:var(--ok);background:color-mix(in srgb,var(--ok) 14%,transparent)}
+.p-warn{color:var(--warn);background:color-mix(in srgb,var(--warn) 16%,transparent)}
+.p-crit{color:var(--crit);background:color-mix(in srgb,var(--crit) 14%,transparent)}
+.ledstrip{position:absolute;top:0;left:-22px;z-index:3;background:var(--night);color:var(--night-text);border-radius:14px;padding:12px 16px;box-shadow:var(--shadow-lg);display:grid;gap:4px;min-width:250px}
+.ledstrip .lbl{font:600 .88rem/1.2 var(--f-indic);color:var(--led);min-height:1.2em;transition:opacity .3s}
+.ledstrip .row{display:flex;align-items:baseline;gap:10px;justify-content:space-between}
+.ledstrip .tok{font:700 1.7rem/1 var(--f-mono);color:var(--led);text-shadow:0 0 14px rgba(255,181,71,.5)}
+.ledstrip .rm{font:600 .8rem var(--f-mono);color:#C9D4F2}
+.phone{position:absolute;right:-8px;bottom:0;z-index:3;width:196px;background:#0A0F1E;border-radius:30px;padding:8px;box-shadow:var(--shadow-lg)}
+.phone .scr{background:var(--bg);border-radius:23px;padding:14px 14px 16px;display:grid;gap:10px;text-align:center}
+.phone .scr small{font-size:.66rem;color:var(--muted)}
+.ring{position:relative;width:118px;height:118px;margin:0 auto}
+.ring svg{width:100%;height:100%;transform:rotate(-90deg)}
+.ring .in{position:absolute;inset:0;display:grid;place-items:center}
+.ring .tk{font:700 1.25rem/1 var(--f-mono)}
+.phone .row3{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.phone .row3 b{display:block;font:800 1rem var(--f-display)}
+.phone .msg{font-size:.66rem;background:var(--brand-soft);color:var(--brand);border-radius:10px;padding:7px;font-weight:600;text-align:left}
+@media (max-width:640px){.stage{min-height:0;display:grid;gap:14px}.win,.ledstrip,.phone{position:relative;inset:auto;left:auto;right:auto}.phone{justify-self:center}.tiles{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+/* compat strip */
+.compat{border-block:1px solid var(--line);background:var(--paper)}
+.compat .wrap{display:flex;flex-wrap:wrap;align-items:center;gap:14px 34px;padding-block:22px}
+.compat .lead{font:700 .76rem var(--f-body);letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.compat span.item{display:flex;align-items:center;gap:8px;font-weight:600;color:var(--ink-2);font-size:.95rem}
+.compat svg{color:var(--brand)}
+
+/* problem */
+.pb{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px}
+.pb article{background:var(--paper);border:1px solid var(--line);border-radius:20px;padding:26px;display:grid;gap:14px;align-content:start}
+.pb .before{font-size:.94rem;color:var(--muted)}
+.pb .after{border-top:1px dashed var(--line);padding-top:14px;font-size:.95rem;display:grid;grid-template-columns:22px 1fr;gap:8px}
+.pb .after::before{content:"→";font:700 1rem var(--f-mono);color:var(--brand)}
+.pb .k{font:700 .72rem var(--f-mono);color:var(--signal);letter-spacing:.06em}
+@media (max-width:900px){.pb{grid-template-columns:1fr}}
+
+/* journey */
+.journey{background:var(--night);color:var(--night-text);border-radius:28px;padding:clamp(22px,4vw,48px);display:grid;gap:28px}
+.journey h2{color:#fff}
+.journey .lede{color:#9FB0DE}
+.jtabs{display:flex;gap:6px;flex-wrap:wrap}
+.jtab{border:1px solid var(--night-line);background:transparent;color:#C9D4F2;border-radius:99px;padding:9px 16px;font:700 .88rem var(--f-body);cursor:pointer}
+.jtab[aria-selected="true"]{background:#fff;color:#07112B;border-color:#fff}
+.jpanel{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.25fr);gap:36px;align-items:center}
+.jpanel ul{list-style:none;margin:0;padding:0;display:grid;gap:16px}
+.jpanel li{display:grid;grid-template-columns:28px 1fr;gap:12px;font-size:1rem;color:#DDE4F7}
+.jpanel li b{color:#fff;display:block}
+.jpanel li span{color:#9FB0DE;font-size:.92rem}
+.jpanel li::before{content:"";width:24px;height:24px;border-radius:8px;background:var(--night-2);box-shadow:inset 0 0 0 7px var(--night-2),inset 0 0 0 12px var(--led);margin-top:2px}
+.jshot{background:#F4F6FA;color:#0A1633;border-radius:18px;padding:18px;box-shadow:0 30px 60px -30px rgba(0,0,0,.8);min-width:0}
+@media (max-width:900px){.jpanel{grid-template-columns:1fr}}
+.m-form{display:grid;gap:8px}
+.m-f{border:1px solid #DCE2EE;border-radius:9px;background:#fff;padding:8px 10px;font-size:.82rem;color:#5A6781;display:flex;justify-content:space-between}
+.m-f b{color:#0A1633}
+.m-row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.m-split{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);gap:14px}
+@media (max-width:560px){.m-split{grid-template-columns:1fr}}
+.m-btn{background:#1D4ED8;color:#fff;border-radius:9px;padding:10px;text-align:center;font-weight:700;font-size:.85rem}
+.m-slip{background:#FFFDF7;border:1px dashed #C9CFDC;border-radius:8px;padding:12px;font:500 .76rem/1.5 var(--f-mono);text-align:center}
+.m-slip b{display:block;font-size:1.8rem;margin:6px 0}
+.m-consult{background:#07112B;color:#A9B7DE;border-radius:14px;padding:16px;display:grid;grid-template-columns:auto 1fr auto;gap:16px;align-items:center}
+.m-consult .t{font:700 1.8rem var(--f-mono);color:#FFB547}
+.m-consult .clk{font:800 1.4rem var(--f-mono);color:#fff}
+.m-outs{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}
+.m-outs span{border:1px solid #DCE2EE;background:#fff;border-radius:8px;padding:7px 10px;font-size:.78rem;font-weight:700}
+.m-outs span.o{background:#E8641A;border-color:#E8641A;color:#fff}
+.m-lane{display:grid;grid-template-columns:76px 1fr;gap:8px;align-items:center;margin-bottom:6px}
+.m-lane .h{border-radius:8px;padding:7px;color:#fff;font:800 .8rem var(--f-display)}
+.m-lane .c{display:flex;gap:6px;flex-wrap:wrap}
+.m-lane .c span{border:1px solid #DCE2EE;background:#fff;border-radius:8px;padding:5px 8px;font:700 .74rem var(--f-mono)}
+.m-bars{display:flex;align-items:flex-end;gap:10px;height:130px;padding-top:10px;border-bottom:1px solid #DCE2EE}
+.m-bars i{flex:1;border-radius:6px 6px 0 0;background:#1D4ED8}
+.m-bars i.f{background:#E8641A;opacity:.45}
+
+/* bento */
+.bento{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:16px}
+.bx{background:var(--paper);border:1px solid var(--line);border-radius:22px;padding:26px;display:grid;gap:12px;align-content:start;min-width:0;position:relative;overflow:hidden}
+.bx p{color:var(--muted);font-size:.95rem}
+.bx .tag{font:700 .72rem var(--f-mono);color:var(--signal);letter-spacing:.06em}
+.b-map{grid-column:span 4;grid-row:span 2}
+.b-2{grid-column:span 2}
+.b-3{grid-column:span 3}
+@media (max-width:1000px){.bento{grid-template-columns:repeat(2,minmax(0,1fr))}.b-map,.b-2,.b-3{grid-column:span 2;grid-row:auto}}
+.twin{background:var(--sunk);border-radius:14px;padding:12px;margin-top:6px}
+.twin svg{width:100%;height:auto;display:block}
+.eta-demo{display:grid;gap:6px;font:600 .82rem var(--f-mono);margin-top:4px}
+.eta-demo div{display:flex;justify-content:space-between;border-bottom:1px dashed var(--line);padding-bottom:6px}
+.esi-row{display:flex;gap:5px;margin-top:4px}
+.esi-row span{flex:1;border-radius:8px;color:#fff;font:800 .9rem var(--f-display);text-align:center;padding:8px 0}
+.speech{font:600 .92rem/1.5 var(--f-indic);display:grid;gap:6px;margin-top:4px}
+.speech span{background:var(--sunk);border-radius:12px 12px 12px 4px;padding:8px 12px;justify-self:start}
+.cp{display:grid;gap:8px;margin-top:4px;font-size:.85rem}
+.cp .u{justify-self:end;background:var(--brand);color:#fff;border-radius:12px 12px 4px 12px;padding:8px 12px}
+:root[data-theme="dark"] .cp .u{color:#06102A}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .cp .u{color:#06102A}}
+.cp .a{background:var(--sunk);border-radius:12px 12px 12px 4px;padding:8px 12px}
+.cp .t{font:500 .72rem var(--f-mono);color:var(--muted);border:1px dashed var(--line);border-radius:8px;padding:4px 8px;justify-self:start}
+
+/* install */
+.install{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,.9fr);gap:28px;align-items:start}
+@media (max-width:960px){.install{grid-template-columns:1fr}}
+.term{background:var(--night);border-radius:20px;overflow:hidden;box-shadow:var(--shadow-lg);min-width:0}
+.term-tabs{display:flex;gap:4px;padding:10px 10px 0;background:var(--night-2);flex-wrap:wrap}
+.term-tab{border:0;background:transparent;color:#8EA0D6;padding:10px 14px;border-radius:10px 10px 0 0;font:700 .84rem var(--f-body);cursor:pointer}
+.term-tab[aria-selected="true"]{background:var(--night);color:#fff}
+.term pre{margin:0;padding:22px 22px 8px;color:#DDE4F7;font:500 .9rem/1.8 var(--f-mono);overflow-x:auto}
+.term pre .c{color:#6F80B6}
+.term pre .p{color:var(--led)}
+.term-foot{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 22px 18px;flex-wrap:wrap}
+.term-foot span{color:#8EA0D6;font-size:.84rem}
+.copy{border:1px solid var(--night-line);background:var(--night-2);color:#fff;border-radius:9px;padding:8px 12px;font:700 .8rem var(--f-body);cursor:pointer}
+.wsteps{display:grid;gap:12px;counter-reset:w}
+.wstep{display:grid;grid-template-columns:44px 1fr;gap:14px;align-items:start;background:var(--paper);border:1px solid var(--line);border-radius:16px;padding:16px}
+.wstep::before{counter-increment:w;content:counter(w);width:44px;height:44px;border-radius:12px;background:var(--brand-soft);color:var(--brand);display:grid;place-items:center;font:800 1.1rem var(--f-display)}
+.wstep p{color:var(--muted);font-size:.92rem;margin-top:2px}
+.reqs{display:flex;flex-wrap:wrap;gap:8px;margin-top:4px}
+.reqs span{font:600 .78rem var(--f-mono);background:var(--sunk);border-radius:8px;padding:6px 9px;color:var(--ink-2)}
+
+/* architecture */
+.arch{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,.8fr);gap:40px;align-items:center}
+@media (max-width:960px){.arch{grid-template-columns:1fr}}
+.arch-svg{background:var(--paper);border:1px solid var(--line);border-radius:22px;padding:18px;overflow-x:auto}
+.arch-svg svg{display:block;width:100%;min-width:560px;height:auto}
+.arch-svg text{font-family:var(--f-body)}
+.facts{display:grid;gap:0;border-top:1px solid var(--line)}
+.facts div{display:grid;grid-template-columns:150px 1fr;gap:14px;padding:14px 0;border-bottom:1px solid var(--line);font-size:.94rem}
+.facts b{font-weight:700}
+.facts span{color:var(--muted)}
+@media (max-width:560px){.facts div{grid-template-columns:1fr;gap:2px}}
+
+/* ROI */
+.roi{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);border-radius:24px;overflow:hidden;border:1px solid var(--line)}
+.roi .in{background:var(--paper);padding:34px;display:grid;gap:24px}
+.roi .out{background:var(--night);color:var(--night-text);padding:34px;display:grid;gap:20px;align-content:start}
+.roi .out b{display:block;font:800 2.4rem/1.05 var(--f-display);color:#fff;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.roi .out .big b{font-size:3.4rem;color:var(--led)}
+.roi .out span{font-size:.9rem;color:#8EA0D6}
+.rng{display:grid;gap:8px}
+.rng div{display:flex;justify-content:space-between;font-weight:600;font-size:.94rem}
+.rng output{font-family:var(--f-mono);color:var(--brand)}
+input[type=range]{width:100%;accent-color:var(--brand)}
+.hint{color:var(--muted);font-size:.86rem}
+@media (max-width:820px){.roi{grid-template-columns:1fr}}
+
+/* pricing */
+.bill{display:flex;align-items:center;gap:12px;margin-bottom:28px;font-weight:600;font-size:.94rem;flex-wrap:wrap}
+.save{font-size:.76rem;color:var(--ok);font-weight:700;background:color-mix(in srgb,var(--ok) 12%,transparent);padding:4px 8px;border-radius:99px}
+.tog{display:inline-flex;align-items:center;cursor:pointer}
+.tog input{appearance:none;width:40px;height:24px;border-radius:99px;background:var(--line);position:relative;cursor:pointer;margin:0;transition:background .2s}
+.tog input::after{content:"";position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:#fff;transition:transform .2s;box-shadow:0 1px 2px rgba(0,0,0,.2)}
+.tog input:checked{background:var(--brand)}
+.tog input:checked::after{transform:translateX(16px)}
+.plans{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px;align-items:stretch}
+.plan{background:var(--paper);border:1px solid var(--line);border-radius:22px;padding:30px;display:grid;gap:18px;grid-template-rows:auto auto auto 1fr auto}
+.plan.hot{border:2px solid var(--brand);box-shadow:var(--shadow-lg);position:relative}
+.plan.hot::before{content:"Most hospitals choose this";position:absolute;top:-13px;left:26px;background:var(--brand);color:#fff;font:700 .72rem/1 var(--f-body);padding:6px 10px;border-radius:99px}
+.price{font:800 2.6rem/1 var(--f-display);letter-spacing:-.03em}
+.price small{font:500 .9rem var(--f-body);color:var(--muted);letter-spacing:0}
+.plan ul{list-style:none;padding:0;margin:0;display:grid;gap:10px;font-size:.94rem}
+.plan li{display:grid;grid-template-columns:20px 1fr;gap:8px}
+.plan li::before{content:"";width:16px;height:16px;margin-top:4px;border-radius:5px;background:var(--brand-soft);box-shadow:inset 0 0 0 5px var(--brand-soft),inset 0 0 0 10px var(--brand)}
+.plan .who{color:var(--muted);font-size:.9rem}
+.selfhost{margin-top:18px;padding:18px 20px;border-radius:16px;border:1px dashed var(--line);display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;color:var(--muted)}
+.selfhost b{color:var(--ink)}
+@media (max-width:900px){.plans{grid-template-columns:1fr}}
+
+/* trust */
+.trust{display:grid;grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr);gap:48px;align-items:start}
+@media (max-width:900px){.trust{grid-template-columns:1fr}}
+
+/* faq */
+.faq{display:grid;gap:10px;max-width:880px}
+details{background:var(--paper);border:1px solid var(--line);border-radius:16px;padding:4px 22px}
+summary{cursor:pointer;font-weight:700;padding:16px 0;list-style:none;display:flex;justify-content:space-between;gap:12px}
+summary::-webkit-details-marker{display:none}
+summary::after{content:"+";font:700 1.2rem/1 var(--f-mono);color:var(--brand)}
+details[open] summary::after{content:"–"}
+details p{color:var(--muted);padding-bottom:18px;max-width:72ch}
+
+/* cta */
+.cta{background:linear-gradient(135deg,#1638B8,#1D4ED8 55%,#3B2BB8);color:#fff;border-radius:30px;padding:clamp(28px,5vw,56px);display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:44px;position:relative;overflow:hidden}
+.cta::after{content:"";position:absolute;right:-120px;top:-120px;width:420px;height:420px;border-radius:50%;border:60px solid rgba(255,181,71,.12)}
+.cta h2{color:#fff}
+.cta p{color:rgba(255,255,255,.86)}
+.cta ul{margin:20px 0 0;padding-left:18px;display:grid;gap:8px;color:rgba(255,255,255,.92)}
+.form{background:var(--paper);color:var(--ink);border-radius:20px;padding:24px;display:grid;gap:12px;position:relative;z-index:1}
+.form label{font-size:.78rem;font-weight:700;color:var(--muted)}
+.form input,.form select{width:100%;padding:11px 12px;border-radius:10px;border:1px solid var(--line);background:var(--paper);color:var(--ink);font:500 .95rem var(--f-body)}
+.form input:focus,.form select:focus{outline:2px solid var(--brand);border-color:transparent}
+.form .f2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.form .fld{display:grid;gap:5px}
+.form pre{white-space:pre-wrap;background:var(--sunk);padding:14px;border-radius:10px;font:500 .84rem/1.5 var(--f-mono);margin:0}
+@media (max-width:860px){.cta{grid-template-columns:1fr}}
+
+footer{padding-block:56px 64px;color:var(--muted);font-size:.9rem}
+.foot{display:grid;grid-template-columns:1.4fr repeat(3,1fr);gap:28px;border-top:1px solid var(--line);padding-top:36px}
+.foot h4{font:700 .78rem var(--f-body);letter-spacing:.12em;text-transform:uppercase;color:var(--ink);margin-bottom:12px}
+.foot a{display:block;color:var(--muted);text-decoration:none;padding:3px 0}
+.foot a:hover{color:var(--ink)}
+@media (max-width:760px){.foot{grid-template-columns:1fr 1fr}}
+@media (prefers-reduced-motion: reduce){*{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
+</style>
+</head>
+<body>
+<header class="nav">
+  <div class="wrap">
+    <a class="logo" href="#top" aria-label="RayCare OS home"><svg width="30" height="30" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="9" fill="#1D4ED8"/><path d="M8 22a12 12 0 0 1 16-11" stroke="#FF8A45" stroke-width="3" fill="none" stroke-linecap="round"/><circle cx="9" cy="22" r="2.4" fill="#fff"/><circle cx="16" cy="22" r="2.4" fill="#fff" opacity=".75"/><circle cx="23" cy="22" r="2.4" fill="#fff" opacity=".5"/></svg>RayCare <small>OS</small></a>
+    <nav class="nav-links" aria-label="Primary"><a href="#product">Product</a><a href="#install">Install</a><a href="#architecture">Technology</a><a href="#pricing">Pricing</a><a href="#faq">FAQ</a></nav>
+    <div class="nav-cta"><a class="btn btn-ghost btn-sm" href="app/" data-app-link>Sign in</a><a class="btn btn-primary btn-sm" href="#demo">Book a demo</a></div>
+  </div>
+</header>
+
+<main id="top">
+<section class="hero">
+  <div class="wrap">
+    <div class="hero-copy">
+      <span class="eyebrow">Patient flow OS for hospitals</span>
+      <h1>Every patient knows their turn. Every department knows its <span class="hl">load.</span></h1>
+      <p class="lede">RayCare OS runs your OPD, emergency and wards from one live queue engine. Patients get an honest wait time on their phone, emergencies move by acuity, and your team sees the whole hospital on one screen.</p>
+      <div class="hero-cta">
+        <a class="btn btn-primary" href="app/" data-app-link>Open the live demo <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+        <a class="btn btn-ghost" href="#install">Install in 15 minutes</a>
+      </div>
+      <a class="research" href="https://doi.org/10.6084/m9.figshare.30545999" target="_blank" rel="noopener"><span class="badge"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19V5a2 2 0 0 1 2-2h12v18H6a2 2 0 0 1-2-2zM4 19a2 2 0 0 1 2-2h12M9 7h6"/></svg></span><span><b>Built on peer-reviewed research</b><span>Published at the ORCHIDS International Conference · read the paper</span></span></a>
+    </div>
+
+    <div class="stage" aria-label="Live product preview with simulated data">
+      <div class="ledstrip"><div class="lbl" id="hLang">Now serving</div><div class="row"><span class="tok" id="hTok">C-116</span><span class="rm" id="hRoom">→ OPD 4</span></div></div>
+      <div class="win">
+        <div class="win-bar"><i></i><i></i><i></i><span class="url">raycare.yourhospital.in/app</span></div>
+        <div class="win-body">
+          <div class="mini-rail" aria-hidden="true"><i class="on"></i><i></i><i></i><i></i><i></i><i></i></div>
+          <div class="win-main">
+            <div style="display:flex;justify-content:space-between;align-items:baseline;gap:8px"><h4>Live operations</h4><span class="mono" style="font-size:.74rem;color:var(--muted)" id="hClock">10:40</span></div>
+            <div class="tiles" id="hTiles"></div>
+            <div class="loads" id="hLoads"></div>
+            <div class="er-line" id="hEr"></div>
+          </div>
+        </div>
+      </div>
+      <div class="phone" aria-hidden="true"><div class="scr"><small>Your visit · Cardiology</small><div class="ring"><svg viewBox="0 0 118 118"><circle cx="59" cy="59" r="49" stroke="var(--sunk)" stroke-width="10" fill="none"/><circle id="hRing" cx="59" cy="59" r="49" stroke="#E0457B" stroke-width="10" fill="none" stroke-linecap="round" stroke-dasharray="308" stroke-dashoffset="120" style="transition:stroke-dashoffset .8s"/></svg><div class="in"><div><small>TOKEN</small><div class="tk" id="hPTok">C-121</div></div></div></div><div class="row3"><div><b id="hPos">4</b><small>Position</small></div><div><b id="hEta">31m</b><small>Est. wait</small></div></div><div class="msg">SMS · 3 patients ahead. Please come back to the waiting area.</div></div></div>
+    </div>
+  </div>
+</section>
+
+<div class="compat" aria-label="Works with">
+  <div class="wrap">
+    <span class="lead">Works with what you have</span>
+    <span class="item"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 5h18v12H3zM8 21h8"/></svg>Any smart TV</span>
+    <span class="item"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M7 2h10v20H7zM11 18h2"/></svg>Any phone, no app</span>
+    <span class="item"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 9V3h12v6M6 18H4v-7h16v7h-2M6 14h12v7H6z"/></svg>58 mm token printers</span>
+    <span class="item"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 4h16v16H4zM4 12h16M12 4v16"/></svg>ABHA-ready</span>
+    <span class="item"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>SMS and WhatsApp gateways</span>
+    <span class="item"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M8 3H5a2 2 0 0 0-2 2v3M21 8V5a2 2 0 0 0-2-2h-3M3 16v3a2 2 0 0 0 2 2h3M16 21h3a2 2 0 0 0 2-2v-3"/></svg>Your HIS via webhooks</span>
+  </div>
+</div>
+
+<section id="product">
+  <div class="wrap">
+    <div class="sec-head"><span class="eyebrow">Why hospitals switch</span><h2>The OPD corridor problem, solved at the source</h2><p class="lede">A printed number tells a patient nothing. RayCare replaces guesswork with a live model of every queue in the building.</p></div>
+    <div class="pb">
+      <article><span class="k">CROWDED CORRIDORS</span><h3>Patients wait where they can see the door</h3><p class="before">Without a reliable wait time, nobody dares leave. Corridors fill, infection risk rises and staff field "how long?" all day.</p><p class="after">Each patient gets a live ETA that learns from the doctor's real pace, plus a message when three people are ahead.</p></article>
+      <article><span class="k">EMERGENCIES IN LINE</span><h3>Acuity gets lost in arrival order</h3><p class="before">A chest-pain patient can sit behind a prescription refill because the list is sorted by who came first.</p><p class="after">Five-level ESI triage places patients by acuity, pages the team for ESI 1–2 and logs every override.</p></article>
+      <article><span class="k">NO LIVE PICTURE</span><h3>Administrators find out after the fact</h3><p class="before">Bottlenecks surface in complaints and end-of-month reports, when nothing can be changed.</p><p class="after">A live floor map, SLA alerts and an hourly forecast show where to move a doctor while there is still time.</p></article>
+    </div>
+  </div>
+</section>
+
+<section style="padding-top:0">
+  <div class="wrap">
+    <div class="journey">
+      <div class="sec-head" style="margin:0"><span class="eyebrow" style="color:var(--led)">One engine, every role</span><h2>Built around the people who use it</h2><p class="lede">Every screen reads the same live data, so the lobby TV, the doctor's console and the patient's phone always agree.</p></div>
+      <div class="jtabs" role="tablist" aria-label="Roles">
+        <button class="jtab" role="tab" aria-selected="true" data-j="desk">Front desk</button>
+        <button class="jtab" role="tab" aria-selected="false" data-j="doctor">Doctor</button>
+        <button class="jtab" role="tab" aria-selected="false" data-j="er">Emergency</button>
+        <button class="jtab" role="tab" aria-selected="false" data-j="patient">Patient</button>
+        <button class="jtab" role="tab" aria-selected="false" data-j="admin">Administrator</button>
+      </div>
+      <div class="jpanel" role="tabpanel" data-p="desk"><ul><li><div><b>Register in under 30 seconds</b><span>Returning patients are matched by phone or ABHA number.</span></div></li><li><div><b>Fair priority, built in</b><span>Seniors and pregnant women move ahead of walk-ins, never ahead of emergencies.</span></div></li><li><div><b>A slip with a QR code</b><span>Patients scan it to follow their turn live.</span></div></li></ul>
+        <div class="jshot"><div class="m-split"><div class="m-form"><div class="m-f">Full name <b>Anita Sharma</b></div><div class="m-row"><div class="m-f">Mobile <b>98xxxxx210</b></div><div class="m-f">Age <b>42</b></div></div><div class="m-f">Department <b>Cardiology</b></div><div class="m-row"><div class="m-f">Alerts <b>తెలుగు</b></div><div class="m-f">Priority <b>Standard</b></div></div><div class="m-btn">Issue token</div></div><div class="m-slip">SUNRISE MULTISPECIALITY<br>CARDIOLOGY · OPD 4<b>C-121</b>Ahead 3 · ~31 min</div></div></div></div>
+      <div class="jpanel" role="tabpanel" data-p="doctor" hidden><ul><li><div><b>One tap to call, complete and route</b><span>Prescription, lab, imaging, referral or admission.</span></div></li><li><div><b>Referrals keep their place</b><span>The patient joins the next queue with priority.</span></div></li><li><div><b>Admit requests a bed</b><span>The ward team sees it instantly.</span></div></li></ul>
+        <div class="jshot"><div class="m-consult"><div><div style="font-size:.72rem;color:#7F90C3">IN CONSULT · OPD 4</div><div class="t">C-116</div></div><div><b style="color:#fff">Ravi Kumar</b><div style="font-size:.78rem">58 M · ABHA linked · waited 14 min</div></div><div class="clk">07:42</div></div><div class="m-outs"><span>Prescription issued</span><span>Lab tests ordered</span><span>Imaging ordered</span><span>Follow-up</span><span class="o">Admit</span></div></div></div>
+      <div class="jpanel" role="tabpanel" data-p="er" hidden><ul><li><div><b>Triage in five observations</b><span>SpO₂, pulse, BP, responsiveness and pain suggest an ESI level with reasons.</span></div></li><li><div><b>Ambulance pre-alerts</b><span>The bay is prepared before the doors open.</span></div></li><li><div><b>Code Blue on every screen</b><span>One tap, hospital-wide, with the location.</span></div></li></ul>
+        <div class="jshot"><div class="m-lane"><span class="h" style="background:#D92D20">ESI 1</span><div class="c"><span>E-109</span></div></div><div class="m-lane"><span class="h" style="background:#E8641A">ESI 2</span><div class="c"><span>E-110</span><span>E-112</span></div></div><div class="m-lane"><span class="h" style="background:#C98A04">ESI 3</span><div class="c"><span>E-108</span></div></div><div class="m-lane"><span class="h" style="background:#15803D">ESI 4</span><div class="c"><span>E-111</span></div></div><div class="m-lane"><span class="h" style="background:#2563EB">ESI 5</span><div class="c"></div></div></div></div>
+      <div class="jpanel" role="tabpanel" data-p="patient" hidden><ul><li><div><b>No app to install</b><span>A link by SMS or a QR code on the slip.</span></div></li><li><div><b>"I'm running late"</b><span>Moves them back three places instead of losing their turn.</span></div></li><li><div><b>Their language</b><span>English, हिन्दी, తెలుగు and more, on screens, messages and voice calls.</span></div></li></ul>
+        <div class="jshot" style="display:grid;place-items:center"><div class="phone" style="position:relative;right:auto;bottom:auto"><div class="scr"><small>మీ సందర్శన · Cardiology</small><div class="ring"><svg viewBox="0 0 118 118"><circle cx="59" cy="59" r="49" stroke="#E9EEF6" stroke-width="10" fill="none"/><circle cx="59" cy="59" r="49" stroke="#E0457B" stroke-width="10" fill="none" stroke-linecap="round" stroke-dasharray="308" stroke-dashoffset="90"/></svg><div class="in"><div><small>TOKEN</small><div class="tk">C-121</div></div></div></div><div class="row3"><div><b>2</b><small>స్థానం</small></div><div><b>12m</b><small>నిరీక్షణ</small></div></div></div></div></div></div>
+      <div class="jpanel" role="tabpanel" data-p="admin" hidden><ul><li><div><b>SLA alerts before complaints</b><span>Set busy and over-SLA thresholds per hospital.</span></div></li><li><div><b>Forecasts and rebalancing</b><span>See the afternoon peak coming and where to move a doctor.</span></div></li><li><div><b>Audit log and CSV export</b><span>Every action, who took it and when.</span></div></li></ul>
+        <div class="jshot"><div style="display:flex;justify-content:space-between;align-items:baseline"><b style="font-family:var(--f-display)">Patients seen per hour</b><span style="font-size:.76rem;color:#5A6781">today · forecast</span></div><div class="m-bars"><i style="height:36%"></i><i style="height:66%"></i><i style="height:78%"></i><i class="f" style="height:84%"></i><i class="f" style="height:70%"></i><i class="f" style="height:42%"></i><i class="f" style="height:56%"></i><i class="f" style="height:60%"></i></div><div style="display:flex;justify-content:space-between;font:500 .7rem var(--f-mono);color:#5A6781;margin-top:6px"><span>8a</span><span>10a</span><span>12p</span><span>2p</span><span>3p</span></div></div></div>
+    </div>
+  </div>
+</section>
+
+<section style="padding-top:0">
+  <div class="wrap">
+    <div class="sec-head"><span class="eyebrow">What's inside</span><h2>Everything a patient-flow team needs, nothing it doesn't</h2></div>
+    <div class="bento">
+      <article class="bx b-map"><span class="tag">DIGITAL TWIN</span><h3>See the whole OPD at a glance</h3><p>A live floor map where every waiting patient is a dot in their seat, coloured by department. Rooms turn amber and red as waits cross your service levels.</p><div class="twin"><svg id="twin" viewBox="0 0 640 250" role="img" aria-label="Floor map preview"></svg></div></article>
+      <article class="bx b-2"><span class="tag">ETA ENGINE</span><h3>Wait times that learn</h3><p>After five consults, estimates follow each room's real pace, not a guess.</p><div class="eta-demo"><div><span>Configured</span><span>11.0 min</span></div><div><span>Learned today</span><span style="color:var(--brand)">8.6 min</span></div></div></article>
+      <article class="bx b-2"><span class="tag">ESI 1–5</span><h3>Acuity-first emergency</h3><p>Suggested level with reasons. Clinicians confirm.</p><div class="esi-row"><span style="background:var(--crit)">1</span><span style="background:var(--signal)">2</span><span style="background:#C98A04">3</span><span style="background:var(--ok)">4</span><span style="background:#2563EB">5</span></div></article>
+      <article class="bx b-3"><span class="tag">MULTILINGUAL</span><h3>Speaks your patients' language</h3><p>Messages, lobby screens and spoken announcements.</p><div class="speech"><span>Token C-121, please proceed to OPD 4.</span><span>टोकन C-121, कृपया OPD 4 में जाएँ।</span><span>టోకెన్ C-121, దయచేసి OPD 4 కి వెళ్ళండి.</span></div></article>
+      <article class="bx b-3"><span class="tag">AI COPILOT</span><h3>Run the floor by asking</h3><p>Copilot reads live data and acts within the signed-in user's permissions.</p><div class="cp"><span class="u">Which department needs help?</span><span class="t">→ get_snapshot</span><span class="a">Cardiology has 9 waiting, about 64 minutes. Moving a doctor from Dermatology would halve it.</span></div></article>
+      <article class="bx b-2"><span class="tag">BEDS</span><h3>Admission to bed in one tap</h3><p>Best-fit ward, cleaning turnover and live occupancy.</p></article>
+      <article class="bx b-2"><span class="tag">APPOINTMENTS</span><h3>Bookings that blend fairly</h3><p>15-minute slots, one-tap check-in, automatic no-shows.</p></article>
+      <article class="bx b-2"><span class="tag">AUDIT</span><h3>Every action accounted for</h3><p>Who called, triaged, overrode or discharged, and when.</p></article>
+    </div>
+  </div>
+</section>
+
+<section id="install" style="padding-top:0">
+  <div class="wrap">
+    <div class="sec-head"><span class="eyebrow">Installation</span><h2>From download to first token in an afternoon</h2><p class="lede">RayCare runs on your own server with one small program and a single database file. No database server to manage, no cloud lock-in, and patient data stays in your building.</p></div>
+    <div class="install">
+      <div class="term">
+        <div class="term-tabs" role="tablist" aria-label="Install method"><button class="term-tab" role="tab" aria-selected="true" data-t="docker">Docker</button><button class="term-tab" role="tab" aria-selected="false" data-t="node">Node.js</button><button class="term-tab" role="tab" aria-selected="false" data-t="win">Windows</button></div>
+        <pre data-tp="docker"><span class="c"># 1. Get RayCare</span>
+<span class="p">$</span> git clone https://github.com/RayeesaMahmood/RayCare.git
+<span class="p">$</span> cd RayCare
+
+<span class="c"># 2. Start it (data is kept in ./data)</span>
+<span class="p">$</span> docker compose up -d
+
+<span class="c"># 3. Open the setup wizard</span>
+<span class="p">→</span> http://localhost:8080/app/</pre>
+        <pre data-tp="node" hidden><span class="c"># Needs Node.js 22.5 or newer</span>
+<span class="p">$</span> git clone https://github.com/RayeesaMahmood/RayCare.git
+<span class="p">$</span> cd RayCare
+<span class="p">$</span> ./install.sh      <span class="c"># checks Node, installs, creates .env</span>
+<span class="p">$</span> npm start
+
+<span class="c"># Try it with a simulated hospital first</span>
+<span class="p">$</span> npm run demo</pre>
+        <pre data-tp="win" hidden><span class="c"># PowerShell, with Node.js 22 LTS installed</span>
+<span class="p">&gt;</span> git clone https://github.com/RayeesaMahmood/RayCare.git
+<span class="p">&gt;</span> cd RayCare
+<span class="p">&gt;</span> .\install.ps1
+<span class="p">&gt;</span> npm start
+
+<span class="p">→</span> http://localhost:8080/app/</pre>
+        <div class="term-foot"><span>One dependency · one database file · runs offline on your LAN</span><button class="copy" type="button" id="copyCmd">Copy commands</button></div>
+      </div>
+      <div class="wsteps">
+        <div class="wstep"><div><b>Name your hospital</b><p>Hospital name, city and whether patients can check in by QR.</p></div></div>
+        <div class="wstep"><div><b>Pick departments</b><p>Tick from ten specialties, set rooms and doctors.</p></div></div>
+        <div class="wstep"><div><b>Wards and languages</b><p>Bed counts for ICU, general and paediatric wards, plus patient languages.</p></div></div>
+        <div class="wstep"><div><b>Create your admin account</b><p>Then add staff, open the lobby TV and print the QR poster.</p><div class="reqs"><span>1 GB RAM</span><span>Linux · Windows · macOS</span><span>Any browser</span></div></div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="architecture" style="padding-top:0">
+  <div class="wrap arch">
+    <div class="arch-svg"><svg viewBox="0 0 640 360" role="img" aria-label="RayCare architecture: screens connect to the RayCare server, which runs the queue engine and stores data in SQLite">
+      <defs><marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="var(--muted)"/></marker></defs>
+      <text x="20" y="28" font-size="11" font-weight="700" fill="var(--muted)" letter-spacing="1.5">SCREENS</text>
+      <g font-size="12" font-weight="600" fill="var(--ink)">
+        <rect x="20" y="42" width="150" height="40" rx="10" fill="var(--sunk)" stroke="var(--line)"/><text x="36" y="67">Staff app (roles)</text>
+        <rect x="20" y="92" width="150" height="40" rx="10" fill="var(--sunk)" stroke="var(--line)"/><text x="36" y="117">Lobby TV</text>
+        <rect x="20" y="142" width="150" height="40" rx="10" fill="var(--sunk)" stroke="var(--line)"/><text x="36" y="167">Patient tracker</text>
+        <rect x="20" y="192" width="150" height="40" rx="10" fill="var(--sunk)" stroke="var(--line)"/><text x="36" y="217">QR check-in</text>
+      </g>
+      <path d="M172 62H236M172 112H236M172 162H236M172 212H236" stroke="var(--muted)" stroke-width="1.5" marker-end="url(#ar)" fill="none"/>
+      <text x="178" y="252" font-size="10.5" fill="var(--muted)">REST commands</text><text x="178" y="266" font-size="10.5" fill="var(--muted)">+ live stream (SSE)</text>
+      <rect x="240" y="30" width="200" height="220" rx="16" fill="var(--brand-soft)" stroke="var(--brand)" stroke-width="1.5"/>
+      <text x="258" y="56" font-size="13" font-weight="800" fill="var(--brand)">RayCare server</text>
+      <g font-size="11.5" fill="var(--ink)"><rect x="256" y="68" width="168" height="30" rx="8" fill="var(--paper)"/><text x="268" y="87">Auth · roles · rate limits</text><rect x="256" y="106" width="168" height="30" rx="8" fill="var(--paper)"/><text x="268" y="125">Runtime (one command at a time)</text><rect x="256" y="144" width="168" height="30" rx="8" fill="var(--paper)"/><text x="268" y="163">Queue engine · triage · beds</text><rect x="256" y="182" width="168" height="30" rx="8" fill="var(--paper)"/><text x="268" y="201">Notifier · Copilot · export</text></g>
+      <text x="258" y="236" font-size="10.5" fill="var(--brand)">Node.js · Express</text>
+      <path d="M442 160H500" stroke="var(--muted)" stroke-width="1.5" marker-end="url(#ar)" fill="none"/><path d="M442 90H500" stroke="var(--muted)" stroke-width="1.5" marker-end="url(#ar)" fill="none"/>
+      <rect x="504" y="60" width="118" height="60" rx="12" fill="var(--sunk)" stroke="var(--line)"/><text x="518" y="86" font-size="12" font-weight="700" fill="var(--ink)">SMS / WhatsApp</text><text x="518" y="104" font-size="10.5" fill="var(--muted)">signed webhooks</text>
+      <path d="M504 140h118v60c0 8-26 14-59 14s-59-6-59-14z" fill="var(--sunk)" stroke="var(--line)"/><ellipse cx="563" cy="140" rx="59" ry="12" fill="var(--paper)" stroke="var(--line)"/><text x="522" y="178" font-size="12" font-weight="700" fill="var(--ink)">SQLite (WAL)</text><text x="522" y="196" font-size="10.5" fill="var(--muted)">one file · backups</text>
+      <rect x="20" y="292" width="602" height="46" rx="12" fill="none" stroke="var(--line)" stroke-dasharray="5 5"/><text x="38" y="320" font-size="12" fill="var(--muted)">The same engine file runs in the browser for the offline demo, so what you test is what you deploy.</text>
+    </svg></div>
+    <div style="display:grid;gap:22px">
+      <div class="sec-head" style="margin:0"><span class="eyebrow">For your IT team</span><h2>A backend you can reason about</h2></div>
+      <div class="facts">
+        <div><b>Single source of truth</b><span>Every change is a validated command, persisted in one transaction and streamed to every screen.</span></div>
+        <div><b>No race conditions</b><span>Commands run one at a time, so two desks can never call the same patient.</span></div>
+        <div><b>Security</b><span>scrypt passwords, signed expiring sessions, role checks on every command, signed patient links, strict security headers.</span></div>
+        <div><b>Tested</b><span>Automated tests cover triage, queue order, beds, permissions, persistence and the public API.</span></div>
+        <div><b>Yours to run</b><span>Self-host on premises or any cloud VM. Back up by copying one file.</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="roi" style="padding-top:0">
+  <div class="wrap">
+    <div class="sec-head"><span class="eyebrow">ROI estimator</span><h2>What shorter waits are worth</h2></div>
+    <div class="roi">
+      <div class="in">
+        <div class="rng"><div><label for="rV">OPD visits per day</label><output id="oV" class="mono"></output></div><input type="range" id="rV" min="50" max="5000" step="50" value="800"></div>
+        <div class="rng"><div><label for="rW">Average wait today (minutes)</label><output id="oW" class="mono"></output></div><input type="range" id="rW" min="10" max="180" step="5" value="70"></div>
+        <div class="rng"><div><label for="rD">Front-desk staff</label><output id="oD" class="mono"></output></div><input type="range" id="rD" min="1" max="40" value="6"></div>
+        <p class="hint">Assumes waits fall by 35% and one in four patients stops asking the desk for an update. Your pilot measures the real figures.</p>
+      </div>
+      <div class="out"><div class="big"><b id="xH">0</b><span>patient hours of waiting removed each month</span></div><div><b id="xW">0 min</b><span>new average wait</span></div><div><b id="xS">0 hrs</b><span>front-desk time freed each month</span></div></div>
+    </div>
+  </div>
+</section>
+
+<section id="pricing" style="padding-top:0">
+  <div class="wrap">
+    <div class="sec-head"><span class="eyebrow">Pricing</span><h2>Priced per site, never per patient</h2><p class="lede">Every plan includes setup, training and unlimited staff accounts. Prices exclude GST.</p></div>
+    <div class="bill"><span>Monthly</span><label class="tog"><input type="checkbox" id="annual" aria-label="Bill annually"></label><span>Annually</span><span class="save">Save 15%</span></div>
+    <div class="plans">
+      <div class="plan"><h3>Clinic</h3><p class="who">Polyclinics and nursing homes</p><div class="price" data-m="4999">₹4,999<small> /month</small></div><ul><li>Up to 5 doctors, 1 location</li><li>QR check-in and lobby display</li><li>Patient tracking links</li><li>Appointments and records</li><li>English + 1 regional language</li></ul><a class="btn btn-ghost" href="#demo">Start a pilot</a></div>
+      <div class="plan hot"><h3>Hospital</h3><p class="who">Multispecialty hospitals, 50–500 beds</p><div class="price" data-m="19999">₹19,999<small> /month</small></div><ul><li>Up to 60 doctors, unlimited departments</li><li>ESI emergency triage and ambulance pre-alerts</li><li>Bed management and admissions</li><li>Live floor map, forecasts and SLA alerts</li><li>Voice announcements in 3 languages</li><li>AI Copilot and audit exports</li><li>Priority support, 7 days a week</li></ul><a class="btn btn-primary" href="#demo">Start a pilot</a></div>
+      <div class="plan"><h3>Network</h3><p class="who">Hospital chains and medical colleges</p><div class="price">Custom</div><ul><li>Multiple sites, one command view</li><li>Custom roles and single sign-on</li><li>HIS integration support</li><li>Dedicated success manager</li><li>On-premises deployment help</li></ul><a class="btn btn-ghost" href="#demo">Talk to us</a></div>
+    </div>
+    <div class="selfhost"><span><b>Every plan is self-hosted by default.</b> Your data stays on your server. Managed hosting is available on request.</span><a class="btn btn-ghost btn-sm" href="#install">See installation</a></div>
+  </div>
+</section>
+
+<section id="security" style="padding-top:0">
+  <div class="wrap trust">
+    <div class="sec-head" style="margin:0"><span class="eyebrow">Privacy and security</span><h2>Patient data treated as clinical data</h2><p class="lede">A queue holds names, phone numbers and complaints. RayCare is designed around India's Digital Personal Data Protection Act from the first day of a pilot.</p></div>
+    <div class="facts">
+      <div><b>Consent</b><span>QR check-in records consent before any message is sent.</span></div>
+      <div><b>Minimal display</b><span>Lobby screens show tokens only, never names or complaints.</span></div>
+      <div><b>Private links</b><span>Each patient's tracking link carries its own secret key.</span></div>
+      <div><b>Least privilege</b><span>Desk, doctor, nurse and admin roles see only what they need.</span></div>
+      <div><b>Audit trail</b><span>Every action is logged with the person and time.</span></div>
+      <div><b>Data residency</b><span>Self-hosted in your building or your chosen Indian data centre.</span></div>
+    </div>
+  </div>
+</section>
+
+<section id="faq" style="padding-top:0">
+  <div class="wrap">
+    <div class="sec-head"><span class="eyebrow">FAQ</span><h2>Questions hospital teams ask</h2></div>
+    <div class="faq">
+      <details><summary>Do we have to replace our HIS or billing system?</summary><p>No. RayCare runs beside your HIS. Start standalone on day one, then send events to your HIS or any integration tool through signed webhooks.</p></details>
+      <details><summary>What hardware do we need?</summary><p>One small server or office PC on your network, or a cloud VM. Any smart TV runs the lobby display in its browser, staff use any browser, and a 58 mm thermal printer is optional for token slips.</p></details>
+      <details><summary>How are wait times calculated?</summary><p>For each room, RayCare combines the patients ahead, their priority and the doctor's real consult pace today. Once five consults are complete, estimates follow the actual pace rather than the configured average.</p></details>
+      <details><summary>What about patients without smartphones?</summary><p>They get a printed slip, SMS messages work on basic phones, and spoken announcements call each token in the patient's language.</p></details>
+      <details><summary>How do SMS and WhatsApp messages get sent?</summary><p>RayCare posts each message to a webhook you choose, signed so your gateway can verify it. That keeps you free to use any SMS or WhatsApp provider your hospital already pays for.</p></details>
+      <details><summary>Does the AI Copilot see patient data?</summary><p>Copilot is optional and off unless an administrator adds an API key. It works from the live operations snapshot and every action it takes runs with the signed-in user's permissions and appears in the audit log.</p></details>
+      <details><summary>How do we back up?</summary><p>All data lives in one database file. Run <span class="mono">npm run backup</span> on a schedule, or copy the data folder with your existing backup tool.</p></details>
+    </div>
+  </div>
+</section>
+
+<section id="demo" style="padding-top:0">
+  <div class="wrap">
+    <div class="cta">
+      <div><span class="eyebrow" style="color:#FFD2B5">30-day pilot</span><h2 style="margin-top:14px">See your own OPD run calmer in a month</h2><p style="margin-top:16px">Tell us about your hospital. We set up one department with you, train your team and share a before-and-after report.</p><ul><li>No hardware to buy</li><li>No change to your HIS</li><li>Your data never leaves your server</li></ul></div>
+      <div class="form" id="formBox">
+        <form id="pilot" style="display:grid;gap:12px">
+          <div class="fld"><label for="fH">Hospital name</label><input id="fH" required placeholder="e.g. Sunrise Multispeciality Hospital"></div>
+          <div class="f2"><div class="fld"><label for="fN">Your name</label><input id="fN" required></div><div class="fld"><label for="fR">Role</label><select id="fR"><option>Medical Superintendent</option><option>Hospital Administrator</option><option>CEO / Director</option><option>IT Head</option><option>Nursing Head</option><option>Other</option></select></div></div>
+          <div class="f2"><div class="fld"><label for="fP">Phone</label><input id="fP" type="tel" required></div><div class="fld"><label for="fC">City</label><input id="fC" placeholder="Hyderabad"></div></div>
+          <div class="fld"><label for="fV">OPD visits per day</label><select id="fV"><option>Under 200</option><option selected>200–1,000</option><option>1,000–3,000</option><option>Over 3,000</option></select></div>
+          <button class="btn btn-primary" type="submit">Request a pilot</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</section>
+</main>
+
+<footer>
+  <div class="wrap foot">
+    <div style="display:grid;gap:12px;align-content:start"><a class="logo" href="#top" style="font-size:1.05rem">RayCare <small>OS</small></a><p style="max-width:34ch">Patient flow software for hospitals and clinics. Made in Hyderabad.</p><p>© 2026 RayCare · Rayeesa Mahmood</p></div>
+    <div><h4>Product</h4><a href="app/" data-app-link>Live demo</a><a href="#product">Features</a><a href="#pricing">Pricing</a><a href="#security">Security</a></div>
+    <div><h4>Deploy</h4><a href="#install">Installation</a><a href="#architecture">Architecture</a><a href="tv/">Lobby display</a><a href="checkin/">QR check-in</a></div>
+    <div><h4>Research</h4><a href="https://doi.org/10.6084/m9.figshare.30545999" target="_blank" rel="noopener">ORCHIDS paper</a><a href="https://github.com/RayeesaMahmood/RayCare" target="_blank" rel="noopener">Source on GitHub</a></div>
+  </div>
+</footer>
+
+<script src="/shared/engine.js"></script>
+<script src="/shared/simulator.js"></script>
+<script>
+(function () {
+  'use strict';
+  const $ = s => document.querySelector(s), $$ = s => [...document.querySelectorAll(s)];
+  const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+  /* Role tabs */
+  $$('.jtab').forEach(b => b.addEventListener('click', () => { $$('.jtab').forEach(x => x.setAttribute('aria-selected', String(x === b))); $$('.jpanel').forEach(p => { p.hidden = p.dataset.p !== b.dataset.j; }); }));
+  /* Install tabs */
+  $$('.term-tab').forEach(b => b.addEventListener('click', () => { $$('.term-tab').forEach(x => x.setAttribute('aria-selected', String(x === b))); $$('.term pre').forEach(p => { p.hidden = p.dataset.tp !== b.dataset.t; }); }));
+  $('#copyCmd').addEventListener('click', ev => {
+    const pre = $$('.term pre').find(p => !p.hidden);
+    const txt = pre.textContent.split('\n').filter(l => /^\s*[$>]/.test(l)).map(l => l.replace(/^\s*[$>]\s?/, '').replace(/\s+#.*$/, '')).join('\n');
+    const b = ev.currentTarget;
+    const sel = () => { const r = document.createRange(); r.selectNodeContents(pre); const s = getSelection(); s.removeAllRanges(); s.addRange(r); b.textContent = 'Selected, press Ctrl+C'; };
+    try { navigator.clipboard.writeText(txt).then(() => { b.textContent = 'Copied'; setTimeout(() => { b.textContent = 'Copy commands'; }, 1600); }, sel); } catch (e) { sel(); }
+  });
+
+  /* ROI */
+  function roi() {
+    const v = +$('#rV').value, w = +$('#rW').value, d = +$('#rD').value;
+    $('#oV').textContent = v.toLocaleString('en-IN'); $('#oW').textContent = w + ' min'; $('#oD').textContent = d;
+    $('#xH').textContent = Math.round(v * 30 * w * .35 / 60).toLocaleString('en-IN');
+    $('#xW').textContent = Math.round(w * .65) + ' min';
+    $('#xS').textContent = Math.round(Math.min(v * .25 * 30 * 1.5 / 60, d * 26 * 8 * .5)).toLocaleString('en-IN') + ' hrs';
+  }
+  ['#rV', '#rW', '#rD'].forEach(s => $(s).addEventListener('input', roi)); roi();
+
+  /* Pricing */
+  $('#annual').addEventListener('change', e => $$('.price[data-m]').forEach(p => { const m = +p.dataset.m, v = e.target.checked ? Math.round(m * .85) : m; p.innerHTML = '₹' + v.toLocaleString('en-IN') + '<small> /month' + (e.target.checked ? ', billed yearly' : '') + '</small>'; }));
+
+  /* Pilot form */
+  $('#pilot').addEventListener('submit', e => {
+    e.preventDefault();
+    const txt = `Pilot request\nHospital: ${$('#fH').value}\nContact: ${$('#fN').value} (${$('#fR').value})\nPhone: ${$('#fP').value}\nCity: ${$('#fC').value || '—'}\nOPD visits/day: ${$('#fV').value}`;
+    $('#formBox').innerHTML = `<div style="display:grid;gap:12px"><h3>Your request is ready</h3><p class="hint">Copy these details and send them to the RayCare team on LinkedIn or email. We reply within one working day.</p><pre id="pTxt">${esc(txt)}</pre><div style="display:flex;gap:10px;flex-wrap:wrap"><button class="btn btn-primary btn-sm" type="button" id="pCopy">Copy details</button><a class="btn btn-ghost btn-sm" href="https://www.linkedin.com/in/rayeesa-mahmood/" target="_blank" rel="noopener">Open LinkedIn</a></div></div>`;
+    $('#pCopy').addEventListener('click', ev => { const b = ev.currentTarget; navigator.clipboard.writeText(txt).then(() => { b.textContent = 'Copied'; }, () => { const r = document.createRange(); r.selectNodeContents($('#pTxt')); const s = getSelection(); s.removeAllRanges(); s.addRange(r); b.textContent = 'Selected, press Ctrl+C'; }); });
+  });
+
+  /* Live hero: the real engine and simulator, running in the page */
+  const E = window.RayCareEngine, Sim = window.RayCareSimulator;
+  if (!E || !Sim) return;
+  let t = E.atMinute(Date.now(), 10 * 60 + 40);
+  const d = Sim.createDemo(t), st = d.state;
+  const LANG = [['Now serving', 'var(--f-body)'], ['अब बारी है', '"Noto Sans Devanagari",system-ui'], ['ఇప్పుడు వంతు', '"Noto Sans Telugu",system-ui']];
+  let li = 0, follow = null, followStart = 0;
+  function paint() {
+    const s = E.stats(st, t), o = E.occupancy(st);
+    $('#hClock').textContent = E.clock12(t) + ' · live demo';
+    $('#hTiles').innerHTML = [['Waiting', s.waitingNow], ['Avg wait', s.avgWait + 'm'], ['Seen today', s.served], ['Beds used', Math.round(o.occupied / o.total * 100) + '%']].map(x => `<div class="tile"><span>${x[0]}</span><b>${x[1]}</b></div>`).join('');
+    const rows = E.opdDepts(st).map(dp => ({ dp, m: E.newWait(st, dp.id, t) })), max = Math.max(60, ...rows.map(r => r.m));
+    $('#hLoads').innerHTML = rows.map(({ dp, m }) => { const k = E.slaStatus(st, m); const c = k === 'over' ? 'var(--crit)' : k === 'busy' ? 'var(--warn)' : 'var(--ok)'; return `<div class="load"><span class="nm"><i class="dot" style="background:${dp.color}"></i>${esc(dp.name)}</span><span class="track"><i style="width:${Math.min(100, m / max * 100)}%;background:${c}"></i></span><span class="pill p-${k === 'over' ? 'crit' : k}">${m}m</span></div>`; }).join('');
+    const erw = E.waiting(st, 'ER'), amb = E.inboundAmbulances(st), bay = st.serving.ER && st.visits[st.serving.ER];
+    $('#hEr').innerHTML = `<b>Emergency</b>${bay ? `<span>Resus bay <b class="mono">${bay.tok}</b></span>` : ''}${erw.map(v => `<span class="esi" style="background:${['', '#D92D20', '#E8641A', '#C98A04', '#15803D', '#2563EB'][v.esi || 4]}">ESI ${v.esi || 4}</span>`).join('')}<span>${amb.length ? amb.map(a => a.id + ' in ' + Math.max(0, Math.round((a.arriveAt - t) / E.MIN)) + ' min').join(' · ') : 'No ambulances inbound'}</span>`;
+    const c = st.lastCalls[0]; if (c) { $('#hTok').textContent = c.tok; $('#hRoom').textContent = '→ ' + c.room; }
+    if (!follow || !st.visits[follow] || st.visits[follow].status !== 'waiting') { const w = E.waiting(st, 'CAR'); const v = w[w.length - 1] || Object.values(st.visits).find(x => x.status === 'waiting' && x.dept !== 'ER'); follow = v && v.id; followStart = v ? E.eta(st, v.id, t).pos : 0; }
+    if (follow) { const v = st.visits[follow], e = E.eta(st, follow, t), dp = E.dept(st, v.dept); $('#hPTok').textContent = v.tok; $('#hPos').textContent = e.pos; $('#hEta').textContent = e.mins + 'm'; const pct = Math.max(.06, 1 - (e.pos - 1) / Math.max(followStart, 1)); $('#hRing').setAttribute('stroke-dashoffset', String(308 * (1 - pct))); $('#hRing').setAttribute('stroke', dp.color); }
+    drawTwin();
+  }
+  function drawTwin() {
+    const deps = E.opdDepts(st), n = deps.length, rw = (600 - (n - 1) * 10) / n; let s = '';
+    deps.forEach((dp, i) => { const x = 20 + i * (rw + 10), m = E.newWait(st, dp.id, t), k = E.slaStatus(st, m), c = k === 'over' ? 'var(--crit)' : k === 'busy' ? 'var(--warn)' : 'var(--ok)', cur = st.serving[dp.id] && st.visits[st.serving[dp.id]];
+      s += `<rect x="${x}" y="10" width="${rw}" height="78" rx="10" fill="var(--paper)" stroke="${c}" stroke-width="2"/><rect x="${x}" y="10" width="${rw}" height="6" rx="3" fill="${dp.color}"/><text x="${x + 10}" y="36" font-size="11" font-weight="700" fill="var(--ink)" font-family="Figtree,sans-serif">${esc(dp.room)}</text><text x="${x + 10}" y="62" font-size="16" font-weight="700" fill="${dp.color}" font-family="JetBrains Mono,monospace">${cur ? cur.tok : '—'}</text><text x="${x + 10}" y="80" font-size="10" fill="var(--muted)" font-family="Figtree,sans-serif">${E.waiting(st, dp.id).length} waiting</text>`; });
+    s += `<rect x="20" y="102" width="600" height="138" rx="12" fill="var(--paper)" stroke="var(--line)"/>`;
+    const seat = i => [40 + (i % 28) * 20.5, 122 + Math.floor(i / 28) * 22];
+    for (let i = 0; i < 140; i++) { const [x, y] = seat(i); s += `<rect x="${x - 5}" y="${y - 5}" width="10" height="10" rx="3" fill="none" stroke="var(--line)"/>`; }
+    Object.values(st.visits).filter(v => v.status === 'waiting' && v.dept !== 'ER').forEach((v, i) => { const [x, y] = seat(v.seat != null ? v.seat % 140 : i); const dp = E.dept(st, v.dept); s += `<circle cx="${x}" cy="${y}" r="6" fill="${dp.color}"/>`; });
+    $('#twin').innerHTML = s;
+  }
+  paint();
+  setInterval(() => { t += 2 * E.MIN; d.sim.step(t); d.engine.takeDelta(t); paint(); }, 2600);
+  setInterval(() => { li = (li + 1) % 3; const el = $('#hLang'); el.style.opacity = 0; setTimeout(() => { el.textContent = LANG[li][0]; el.style.fontFamily = LANG[li][1]; el.style.opacity = 1; }, 300); }, 3200);
+})();
+</script>
+</body>
+</html>

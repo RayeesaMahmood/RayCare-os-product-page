@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Check In · RayCare</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,800&family=Figtree:wght@400;600;700&family=Noto+Sans+Devanagari:wght@500;700&family=Noto+Sans+Telugu:wght@500;700&display=swap">
+<link rel="stylesheet" href="/assets/theme.css">
+<style>
+/* Layout: single mobile column self check-in form */
+body{font-family:var(--f-body),var(--f-indic)}
+.wrap{max-width:460px;margin:0 auto;padding-inline:16px;padding-block:22px 40px;display:grid;gap:18px}
+.depts{display:grid;gap:8px}
+.depts label{display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;padding:12px;border:1px solid var(--line);border-radius:12px;background:var(--surface);cursor:pointer}
+.depts label:has(input:checked){border-color:var(--brand);background:var(--brand-soft)}
+.depts input{accent-color:var(--brand)}
+.consent{display:flex;gap:10px;align-items:flex-start;font-size:.86rem}
+.consent input{margin-top:3px;accent-color:var(--brand)}
+</style>
+</head>
+<body>
+<div class="wrap" id="app"><p class="muted" style="text-align:center;padding:60px 0">Loading…</p></div>
+<script>
+(function () {
+  'use strict';
+  const $ = s => document.querySelector(s);
+  const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const T = {
+    en: { title: 'Check in', sub: 'Get your token without queueing at the desk. We will message you before your turn.', name: 'Full name', phone: 'Mobile number', age: 'Age', dept: 'Which department?', wait: 'wait', closed: 'Closed', consent: 'I agree to receive visit updates by SMS or WhatsApp and to the hospital storing these details for my visit.', go: 'Get my token', off: 'Self check-in is turned off. Please visit the registration desk.' },
+    hi: { title: 'चेक इन', sub: 'डेस्क पर लाइन के बिना टोकन लें। आपकी बारी से पहले हम संदेश भेजेंगे।', name: 'पूरा नाम', phone: 'मोबाइल नंबर', age: 'उम्र', dept: 'कौन सा विभाग?', wait: 'प्रतीक्षा', closed: 'बंद', consent: 'मैं SMS या WhatsApp द्वारा अपडेट पाने और विज़िट के लिए यह जानकारी संग्रहीत करने के लिए सहमत हूँ।', go: 'मेरा टोकन लें', off: 'सेल्फ चेक-इन बंद है। कृपया पंजीकरण डेस्क पर जाएँ।' },
+    te: { title: 'చెక్ ఇన్', sub: 'డెస్క్ వద్ద క్యూ లేకుండా టోకెన్ పొందండి. మీ వంతుకు ముందు సందేశం పంపుతాము.', name: 'పూర్తి పేరు', phone: 'మొబైల్ నంబర్', age: 'వయసు', dept: 'ఏ విభాగం?', wait: 'నిరీక్షణ', closed: 'మూసివేయబడింది', consent: 'SMS లేదా WhatsApp ద్వారా అప్డేట్లు పొందడానికి మరియు ఈ వివరాలు నిల్వ చేయడానికి నేను అంగీకరిస్తున్నాను.', go: 'నా టోకెన్ పొందండి', off: 'సెల్ఫ్ చెక్-ఇన్ ఆఫ్ చేయబడింది. దయచేసి రిజిస్ట్రేషన్ డెస్క్‌కు వెళ్ళండి.' }
+  };
+  let info = null, lang = 'en', demo = false;
+  function render(err) {
+    const L = T[lang];
+    const langs = info.hospital.langs.filter(l => T[l]);
+    $('#app').innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center;gap:10px"><b style="font-family:var(--f-display)">${esc(info.hospital.name)}</b>${langs.length > 1 ? `<div class="seg" style="flex-wrap:nowrap">${langs.map(l => `<label><input type="radio" name="lg" value="${l}" ${l === lang ? 'checked' : ''}>${l === 'en' ? 'EN' : l === 'hi' ? 'हि' : 'తె'}</label>`).join('')}</div>` : ''}</div>
+      <div><h1>${L.title}</h1><p class="muted" style="margin-top:6px">${L.sub}</p></div>
+      ${info.hospital.publicCheckin ? `<form class="f" id="f"><div class="field"><label for="n">${L.name}</label><input type="text" id="n" required maxlength="80" autocomplete="name"></div>
+      <div class="r2"><div class="field"><label for="p">${L.phone}</label><input type="tel" id="p" required inputmode="numeric" maxlength="14" autocomplete="tel"></div><div class="field"><label for="a">${L.age}</label><input type="number" id="a" min="0" max="125"></div></div>
+      <div class="field"><span class="flabel">${L.dept}</span><div class="depts">${info.depts.map((d, i) => `<label><input type="radio" name="d" value="${d.id}" ${d.open ? '' : 'disabled'} ${i === 0 && d.open ? 'checked' : ''}><span><span class="ddot" style="background:${d.color}"></span> ${esc(d.name)} <span class="muted small">· ${esc(d.room)}</span></span><span class="muted small">${d.open ? '~' + d.wait + ' min ' + L.wait : L.closed}</span></label>`).join('')}</div></div>
+      <label class="consent"><input type="checkbox" id="c" required> <span>${L.consent}</span></label>
+      <p class="err" ${err ? '' : 'hidden'}>${esc(err || '')}</p><button class="btn b-pri b-lg" type="submit">${L.go}</button>${demo ? '<p class="muted small" style="text-align:center">Demo preview · connect to a RayCare server to issue real tokens</p>' : ''}</form>` : `<div class="empty">${L.off}</div>`}`;
+    const f = $('#f'); if (f) f.addEventListener('submit', submit);
+    document.querySelectorAll('input[name=lg]').forEach(r => r.addEventListener('change', () => { lang = r.value; render(); }));
+  }
+  async function submit(e) {
+    e.preventDefault(); const b = e.target.querySelector('button'); b.disabled = true;
+    const body = { name: $('#n').value, phone: $('#p').value, age: $('#a').value, dept: (document.querySelector('input[name=d]:checked') || {}).value, lang, consent: $('#c').checked };
+    if (demo) { location.href = '/t/?v=demo&k=demo'; return; }
+    try {
+      const r = await fetch('/api/public/checkin', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) });
+      const j = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error(j.error ? j.error.message : 'Please try again');
+      location.href = j.trackUrl;
+    } catch (err) { render(err.message); } finally { b.disabled = false; }
+  }
+  (async () => {
+    try { const r = await fetch('/api/public/info', { cache: 'no-store' }); if (!r.ok) throw new Error(); info = await r.json(); }
+    catch (e) { demo = true; info = { hospital: { name: 'Sunrise Multispeciality', langs: ['en', 'hi', 'te'], publicCheckin: true }, depts: [{ id: 'GEN', name: 'General Medicine', room: 'OPD 1', open: true, color: '#3B6FF5', wait: 24 }, { id: 'PED', name: 'Paediatrics', room: 'OPD 3', open: true, color: '#8B5CF6', wait: 18 }, { id: 'CAR', name: 'Cardiology', room: 'OPD 4', open: true, color: '#E0457B', wait: 41 }] }; }
+    const pref = (navigator.language || 'en').slice(0, 2); if (info.hospital.langs.includes(pref) && T[pref]) lang = pref;
+    render();
+  })();
+})();
+</script>
+</body>
+</html>

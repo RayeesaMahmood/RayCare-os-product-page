@@ -1,0 +1,16 @@
+services:
+  raycare:
+    build: .
+    image: raycare-os:latest
+    container_name: raycare
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      TZ: Asia/Kolkata
+      DATA_DIR: /app/data
+    volumes:
+      - ./data:/app/data

@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Lobby Display · RayCare</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,800&family=Figtree:wght@500;700&family=JetBrains+Mono:wght@600;700&family=Noto+Sans+Devanagari:wght@600&family=Noto+Sans+Telugu:wght@600&display=swap">
+<link rel="stylesheet" href="/assets/theme.css">
+<style>
+/* Layout: full-bleed LED board for a lobby TV; always dark by design */
+:root{color-scheme:dark}
+html,body{height:100%}
+body{background:#040A1C;color:#C9D4F2;overflow:hidden}
+.tv{height:100%;display:grid;grid-template-rows:auto 1fr auto;padding:clamp(16px,3vw,40px);gap:clamp(12px,2vh,24px)}
+.top{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;border-bottom:1px dashed #1B2A55;padding-bottom:clamp(10px,2vh,20px)}
+.hn{font:700 clamp(.8rem,1.2vw,1.1rem) var(--f-body);letter-spacing:.16em;text-transform:uppercase;color:#8EA0D6}
+.lang{font:700 clamp(1.6rem,3.4vw,3.2rem)/1.15 var(--f-indic);color:#FFB547;min-height:1.2em;transition:opacity .3s}
+.clk{font:700 clamp(1.8rem,3.6vw,3.6rem)/1 var(--f-mono);color:#fff}
+.grid{display:grid;grid-template-columns:minmax(0,1.5fr) auto auto auto;column-gap:clamp(16px,3vw,48px);align-content:start;overflow:hidden}
+.h{font:700 clamp(.7rem,1vw,.95rem)/1 var(--f-body);letter-spacing:.14em;text-transform:uppercase;color:#6F80B6;padding:0 4px clamp(8px,1.5vh,14px)}
+.c{padding:clamp(10px,2vh,20px) 4px;border-top:1px solid #1B2A55;display:flex;align-items:center}
+.dn{display:grid;color:#fff;font-weight:700;font-size:clamp(1.1rem,2.2vw,2.2rem);line-height:1.15;min-width:0}
+.dn small{font-weight:500;color:#7F90C3;font-size:.55em}
+.dn i{display:inline-block;width:.45em;height:.45em;border-radius:3px;margin-right:.35em;vertical-align:.12em}
+.led{font:700 clamp(1.8rem,4.2vw,4.4rem)/1 var(--f-mono);color:#FFB547;text-shadow:0 0 18px rgba(255,181,71,.5)}
+.nx{font:600 clamp(1rem,2vw,2rem) var(--f-mono);color:#9FB0E0}
+.wt{font:700 clamp(.95rem,1.8vw,1.8rem) var(--f-mono);color:#9FB0E0;justify-content:flex-end}
+.foot{display:flex;gap:12px;flex-wrap:wrap;align-items:center;font:600 clamp(.85rem,1.4vw,1.3rem) var(--f-mono)}
+.foot span.call{border:1px solid #1B2A55;border-radius:10px;padding:6px 12px}
+.foot .lbl{font-family:var(--f-body);color:#6F80B6;font-size:.8em;letter-spacing:.12em}
+.sound{position:fixed;right:16px;bottom:16px;background:#0E1C40;color:#fff;border:1px solid #1B2A55;border-radius:10px;padding:10px 14px;font:700 .9rem var(--f-body);cursor:pointer}
+.note{position:fixed;left:16px;bottom:16px;font:600 .8rem var(--f-body);color:#6F80B6}
+@media (max-width:700px){.grid{grid-template-columns:minmax(0,1fr) auto auto}.nxc{display:none}}
+</style>
+</head>
+<body>
+<div class="tv"><div class="top"><div><div class="hn" id="hn">RayCare</div><div class="lang" id="lang">Now serving</div></div><div class="clk" id="clk">--:--</div></div>
+<div class="grid" id="grid"></div><div class="foot" id="foot"></div></div>
+<button class="sound" id="sound" type="button">Turn on announcements</button>
+<div class="note" id="note" hidden></div>
+<script src="/shared/engine.js"></script>
+<script src="/shared/simulator.js"></script>
+<script>
+(function () {
+  'use strict';
+  const E = window.RayCareEngine, $ = s => document.querySelector(s);
+  const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const LANG = { en: ['Now serving', 'var(--f-body)'], hi: ['अब बारी है', '"Noto Sans Devanagari",system-ui'], te: ['ఇప్పుడు వంతు', '"Noto Sans Telugu",system-ui'], ta: ['இப்போது', 'system-ui'], kn: ['ಈಗ ಸರದಿ', 'system-ui'], ur: ['اب باری ہے', 'system-ui'] };
+  let board = null, li = 0, voice = false, lastCall = 0, lastRecall = 0, flash = null, serverNow = Date.now(), at = Date.now(), rate = 1;
+  const now = () => serverNow + (Date.now() - at) * rate;
+  function speak(tok, room, lang) {
+    if (!voice || !('speechSynthesis' in window)) return;
+    const t = String(tok).split('').join(' ');
+    const txt = lang === 'hi' ? `टोकन ${t}, कृपया ${room} में जाएँ।` : lang === 'te' ? `టోకెన్ ${t}, దయచేసి ${room} కి వెళ్ళండి.` : `Token ${t}, please proceed to ${room}.`;
+    try { const u = new SpeechSynthesisUtterance(txt); u.lang = { hi: 'hi-IN', te: 'te-IN' }[lang] || 'en-IN'; u.rate = .92; speechSynthesis.speak(u); } catch (e) { /* ignore */ }
+  }
+  function render() {
+    if (!board) return;
+    $('#hn').textContent = board.hospital; document.title = board.hospital + ' · Lobby';
+    $('#clk').textContent = E.clock12(now());
+    const c = board.lastCalls[0];
+    if (c && c.t > lastCall) { if (lastCall) { flash = c.dept; speak(c.tok, c.room, c.lang); } lastCall = c.t; }
+    if (board.recall && board.recall.t > lastRecall) { if (lastRecall) { flash = board.recall.dept; speak(board.recall.tok, board.recall.room, board.recall.lang); } lastRecall = board.recall.t; }
+    $('#grid').innerHTML = '<div class="h">Department</div><div class="h">Token</div><div class="h nxc">Next</div><div class="h" style="text-align:right">Wait</div>' + board.rows.map(r => `<div class="c dn"><span><i style="background:${r.color}"></i>${esc(r.name)}</span><small>${esc(r.room)}</small></div><div class="c"><span class="led ${flash === r.id ? 'flash' : ''}">${r.serving || '—'}</span></div><div class="c nx nxc">${r.next || '—'}</div><div class="c wt" style="${r.id === 'ER' ? 'color:#FF8A7E' : ''}">${r.id === 'ER' ? 'By triage' : '~' + r.wait + ' min'}</div>`).join('');
+    $('#foot').innerHTML = '<span class="lbl">RECENT CALLS</span>' + board.lastCalls.slice(0, 6).map(x => `<span class="call">${x.tok} → ${esc(x.room)}</span>`).join('');
+    flash = null;
+  }
+  setInterval(() => { const langs = (board && board.langs || ['en']).filter(l => LANG[l]); li = (li + 1) % langs.length; const L = LANG[langs[li]]; const el = $('#lang'); el.style.opacity = 0; setTimeout(() => { el.textContent = L[0]; el.style.fontFamily = L[1]; el.style.opacity = 1; }, 300); }, 4000);
+  setInterval(() => { $('#clk').textContent = E.clock12(now()); }, 1000);
+  $('#sound').addEventListener('click', () => { voice = !voice; $('#sound').textContent = voice ? 'Announcements on' : 'Turn on announcements'; if (voice) speak('R-1', 'the lobby', 'en'); });
+  document.addEventListener('dblclick', () => { try { document.documentElement.requestFullscreen().catch(() => {}); } catch (e) { /* ignore */ } });
+
+  async function start() {
+    try {
+      const h = location.protocol === 'file:' ? null : await fetch('/api/health', { cache: 'no-store' }).then(r => r.ok ? r.json() : null).catch(() => null);
+      if (h && h.ready) {
+        rate = h.clockRate || 1;
+        const es = new EventSource('/api/public/stream');
+        es.addEventListener('board', ev => { board = JSON.parse(ev.data); serverNow = board.now; at = Date.now(); render(); });
+        es.onerror = () => { $('#note').hidden = false; $('#note').textContent = 'Reconnecting…'; };
+        es.onopen = () => { $('#note').hidden = true; };
+        return;
+      }
+      if (h && !h.ready) { $('#note').hidden = false; $('#note').textContent = 'Finish the setup wizard in the staff app first.'; return; }
+    } catch (e) { /* fall through to demo */ }
+    // No server: run the demo hospital locally so the screen can be previewed.
+    let t = E.atMinute(Date.now(), 10 * 60 + 40); const d = window.RayCareSimulator.createDemo(t);
+    serverNow = t; at = Date.now(); rate = 0; board = E.board(d.state, t); render();
+    $('#note').hidden = false; $('#note').textContent = 'Demo data · connect to a RayCare server for your hospital';
+    setInterval(() => { t += 2 * E.MIN; d.sim.step(t); d.engine.takeDelta(t); serverNow = t; at = Date.now(); board = E.board(d.state, t); render(); }, 2600);
+  }
+  start();
+})();
+</script>
+</body>
+</html>
